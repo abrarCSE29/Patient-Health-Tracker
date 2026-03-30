@@ -102,9 +102,35 @@ interface Medication {
   status: string;
 }
 
+interface Medication {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate?: string;
+  durationDays?: number;
+  morningDosage?: string;
+  afternoonDosage?: string;
+  nightDosage?: string;
+  morningMeal?: string;
+  afternoonMeal?: string;
+  nightMeal?: string;
+  doctor?: string;
+  status: string;
+}
+
+interface Visit {
+  id: string;
+  date: string;
+  status: string;
+  doctor?: {
+    name: string;
+  };
+}
+
 interface MedicationRosterPDFProps {
   medications: Medication[];
   profileName?: string;
+  visits?: Visit[];
 }
 
 // Calculate end date for a medication
@@ -131,6 +157,7 @@ const calculateDaysRemaining = (med: Medication): string => {
 export const MedicationRosterPDF: React.FC<MedicationRosterPDFProps> = ({
   medications,
   profileName,
+  visits = [],
 }) => {
   const today = format(new Date(), 'dd/MM/yyyy');
 
@@ -144,6 +171,12 @@ export const MedicationRosterPDF: React.FC<MedicationRosterPDFProps> = ({
   const morningAfterMeal = activeMeds.filter(
     (m) => m.morningDosage && m.morningMeal === 'After Meal'
   );
+  const afternoonBeforeMeal = activeMeds.filter(
+    (m) => m.afternoonDosage && m.afternoonMeal === 'Before Meal'
+  );
+  const afternoonAfterMeal = activeMeds.filter(
+    (m) => m.afternoonDosage && m.afternoonMeal === 'After Meal'
+  );
   const nightBeforeMeal = activeMeds.filter(
     (m) => m.nightDosage && m.nightMeal === 'Before Meal'
   );
@@ -151,14 +184,14 @@ export const MedicationRosterPDF: React.FC<MedicationRosterPDFProps> = ({
     (m) => m.nightDosage && m.nightMeal === 'After Meal'
   );
 
-  // Get unique doctors for follow-up
-  const doctors = [...new Set(activeMeds.map((m) => m.doctor).filter(Boolean))];
+  // Filter upcoming visits
+  const upcomingVisits = visits.filter((v) => v.status === 'upcoming');
 
   // Render medication table
   const renderMedicationTable = (
     meds: Medication[],
     label: string,
-    mealType: 'morning' | 'night'
+    mealType: 'morning' | 'afternoon' | 'night'
   ) => (
     <View style={styles.tableColumn}>
       <Text style={styles.mealLabel}>{label}</Text>
@@ -174,7 +207,7 @@ export const MedicationRosterPDF: React.FC<MedicationRosterPDFProps> = ({
           <Text style={styles.cellSmall}>{index + 1}</Text>
           <Text style={styles.cellMedium}>{med.name}</Text>
           <Text style={styles.cellSmall}>
-            {mealType === 'morning' ? med.morningDosage : med.nightDosage}
+            {mealType === 'morning' ? med.morningDosage : mealType === 'afternoon' ? med.afternoonDosage : med.nightDosage}
           </Text>
           <Text style={styles.cell}>{calculateDaysRemaining(med)}</Text>
           <Text style={styles.cell}>{calculateEndDate(med)}</Text>
@@ -208,6 +241,15 @@ export const MedicationRosterPDF: React.FC<MedicationRosterPDFProps> = ({
           </View>
         </View>
 
+        {/* Afternoon Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>AFTERNOON</Text>
+          <View style={styles.tableContainer}>
+            {renderMedicationTable(afternoonBeforeMeal, 'BEFORE MEAL', 'afternoon')}
+            {renderMedicationTable(afternoonAfterMeal, 'AFTER MEAL', 'afternoon')}
+          </View>
+        </View>
+
         {/* Night Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>NIGHT</Text>
@@ -217,15 +259,15 @@ export const MedicationRosterPDF: React.FC<MedicationRosterPDFProps> = ({
           </View>
         </View>
 
-        {/* Follow-up Section */}
-        {doctors.length > 0 && (
+        {/* Follow-up Section - Only show if there are upcoming visits */}
+        {upcomingVisits.length > 0 && (
           <View style={styles.followUpSection}>
             <Text style={{ fontSize: 11, fontWeight: 'bold', marginBottom: 10 }}>
               Follow-up Information
             </Text>
-            {doctors.map((doctor, index) => (
-              <Text key={index} style={styles.followUpText}>
-                Follow up with {doctor}
+            {upcomingVisits.map((visit) => (
+              <Text key={visit.id} style={styles.followUpText}>
+                Follow up on {format(parseISO(visit.date), 'dd/MM/yyyy')} {visit.doctor?.name ? `with ${visit.doctor.name}` : ''}
               </Text>
             ))}
           </View>

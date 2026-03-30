@@ -13,6 +13,7 @@ export default function MedicationsPage() {
   const { activeProfileId } = usePatient();
   const { data: meds, refresh } = useData<any[]>(activeProfileId ? `/api/medications?profileId=${activeProfileId}` : null);
   const { data: doctors } = useData<any[]>('/api/doctors');
+  const { data: visits } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -125,6 +126,7 @@ export default function MedicationsPage() {
         <MedicationRosterPDF 
           medications={meds} 
           profileName={activeProfileId ? "Patient" : undefined}
+          visits={visits || []}
         />
       ).toBlob();
       
