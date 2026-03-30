@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique    
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  profiles  Profile[]
+}
+
+model Profile {
+  id               String   @id @default(cuid())
+  name             String
+  relationship     String   @default("Self")
+  age              Int
+  gender           String?
+  bloodGroup       String?
+  height           String?
+  weight           String?
+  conditions       String?
+  allergies        String?
+  emergencyContact String?
+  emergencyPhone   String?
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  medications      Medication[]
+  visits           Visit[]
+  reports          Report[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Medication {
+  id              String   @id @default(cuid())
+  name            String
+  startDate       String
+  endDate         String?
+  durationDays    Int?
+  morningDosage   String?
+  afternoonDosage String?
+  nightDosage     String?
+  morningMeal     String?
+  afternoonMeal   String?
+  nightMeal       String?
+  doctor          String?
+  notes           String?
+  status          String   @default("active")
+  profileId       String
+  profile         Profile  @relation(fields: [profileId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Doctor {
+  id          String   @id @default(cuid())
+  name        String
+  specialty   String
+  hospital    String
+  phone       String?
+  email       String?
+  address     String?
+  visits      Visit[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Visit {
+  id          String   @id @default(cuid())
+  date        String
+  time        String?
+  location    String?
+  type        String?  @default("Checkup")
+  reason      String
+  diagnosis   String?
+  notes       String?
+  status      String   @default("upcoming")
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id])
+  doctorId    String
+  doctor      Doctor   @relation(fields: [doctorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  title       String
+  date        String
+  type        String
+  result      String?
+  status      String   @default("completed")
+  doctorId    String?
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

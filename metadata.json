@@ -1,0 +1,7 @@
+{
+  "name": "Patient Health Tracker",
+  "description": "A comprehensive health management platform for patients and caregivers to track medications, doctor visits, and test reports.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
