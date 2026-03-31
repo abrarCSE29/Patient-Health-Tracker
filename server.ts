@@ -1,78 +1,234 @@
 import "dotenv/config";
 import express from "express";
+import cookieParser from "cookie-parser";
+import bcrypt from "bcryptjs";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./src/lib/db.js";
+import {
+  clearRefreshCookie,
+  getRefreshTokenFromRequest,
+  requireRequestUser,
+  setRefreshCookie,
+} from "./src/lib/auth.js";
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from "./src/lib/tokens.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function isPublicApiRoute(pathname: string, method: string) {
+  if (pathname === "/health") return true;
+  if (pathname === "/auth/register" && method === "POST") return true;
+  if (pathname === "/auth/login" && method === "POST") return true;
+  if (pathname === "/auth/refresh" && method === "POST") return true;
+  return false;
+}
+
+async function userOwnsProfile(userId: string, profileId: string) {
+  const profile = await db.profile.findFirst({ where: { id: profileId, userId } });
+  return !!profile;
+}
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Body parsing middleware
+  app.use(cookieParser());
   app.use(express.json());
 
-  // API routes
+  app.use("/api", (req, res, next) => {
+    if (isPublicApiRoute(req.path, req.method)) return next();
+    const user = requireRequestUser(req, res);
+    if (!user) return;
+    next();
+  });
+
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Auth API
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { name, email, password } = req.body || {};
+
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: "Name, email, and password are required" });
+      }
+
+      const normalizedEmail = String(email).toLowerCase().trim();
+      if (String(password).length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters long" });
+      }
+
+      const existingUser = await db.user.findUnique({ where: { email: normalizedEmail } });
+      if (existingUser) {
+        return res.status(409).json({ error: "An account with this email already exists" });
+      }
+
+      const hashedPassword = await bcrypt.hash(String(password), 10);
+      const user = await db.user.create({
+        data: {
+          name: String(name).trim(),
+          email: normalizedEmail,
+          password: hashedPassword,
+        },
+      });
+
+      const accessToken = signAccessToken({ id: user.id, email: user.email });
+      const refreshToken = signRefreshToken({ id: user.id, email: user.email });
+      setRefreshCookie(res, refreshToken);
+
+      return res.status(201).json({
+        accessToken,
+        user: { id: user.id, email: user.email, name: user.name ?? null },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to create account" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body || {};
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      const normalizedEmail = String(email).toLowerCase().trim();
+      const user = await db.user.findUnique({ where: { email: normalizedEmail } });
+
+      if (!user) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      let valid = false;
+      if (user.password.startsWith("$2a$") || user.password.startsWith("$2b$") || user.password.startsWith("$2y$")) {
+        valid = await bcrypt.compare(password, user.password);
+      } else {
+        valid = user.password === password;
+      }
+
+      if (!valid) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const accessToken = signAccessToken({ id: user.id, email: user.email });
+      const refreshToken = signRefreshToken({ id: user.id, email: user.email });
+      setRefreshCookie(res, refreshToken);
+
+      return res.json({
+        accessToken,
+        user: { id: user.id, email: user.email, name: user.name ?? null },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
+  app.post("/api/auth/refresh", async (req, res) => {
+    try {
+      const refreshToken = getRefreshTokenFromRequest(req);
+      if (!refreshToken) {
+        return res.status(401).json({ error: "Missing refresh token" });
+      }
+
+      const payload = verifyRefreshToken(refreshToken);
+      const user = await db.user.findUnique({ where: { id: payload.sub } });
+
+      if (!user || user.email !== payload.email) {
+        clearRefreshCookie(res);
+        return res.status(401).json({ error: "Invalid refresh token" });
+      }
+
+      const nextAccessToken = signAccessToken({ id: user.id, email: user.email });
+      const nextRefreshToken = signRefreshToken({ id: user.id, email: user.email });
+      setRefreshCookie(res, nextRefreshToken);
+
+      return res.json({
+        accessToken: nextAccessToken,
+        user: { id: user.id, email: user.email, name: user.name ?? null },
+      });
+    } catch {
+      clearRefreshCookie(res);
+      res.status(401).json({ error: "Invalid refresh token" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    clearRefreshCookie(res);
+    res.json({ success: true });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    const authUser = requireRequestUser(req, res);
+    if (!authUser) return;
+
+    const user = await db.user.findUnique({ where: { id: authUser.userId } });
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    res.json({ id: user.id, email: user.email, name: user.name ?? null });
   });
 
   // Medications API
   app.get("/api/medications", async (req, res) => {
     try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
       const { profileId } = req.query;
-      const where = profileId ? { profileId: String(profileId) } : {};
+      if (profileId) {
+        const owned = await userOwnsProfile(authUser.userId, String(profileId));
+        if (!owned) return res.status(403).json({ error: "Forbidden" });
+      }
+
       const medications = await db.medication.findMany({
-        where,
-        include: { profile: true }
+        where: profileId
+          ? { profileId: String(profileId) }
+          : { profile: { userId: authUser.userId } },
+        include: { profile: true },
       });
       res.json(medications);
-    } catch (error) {
+    } catch {
       res.status(500).json({ error: "Failed to fetch medications" });
     }
   });
 
   app.post("/api/medications", async (req, res) => {
     try {
-      console.log("POST /api/medications", req.body);
-      const { 
-        name, 
-        startDate, 
-        endDate, 
-        status, 
-        profileId, 
-        durationDays, 
-        doctor, 
-        notes, 
-        morningDosage, 
-        afternoonDosage, 
-        nightDosage, 
-        morningMeal, 
-        afternoonMeal, 
-        nightMeal 
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const {
+        name,
+        startDate,
+        endDate,
+        status,
+        profileId,
+        durationDays,
+        doctor,
+        notes,
+        morningDosage,
+        afternoonDosage,
+        nightDosage,
+        morningMeal,
+        afternoonMeal,
+        nightMeal,
       } = req.body;
-      
-      // For prototype, if profileId is missing, we'll try to find the first profile
-      let targetProfileId = profileId;
-      if (!targetProfileId) {
-        const firstProfile = await db.profile.findFirst();
-        if (firstProfile) targetProfileId = firstProfile.id;
-      }
 
-      if (!targetProfileId) {
-        return res.status(400).json({ error: "Profile ID is required" });
-      }
+      if (!profileId) return res.status(400).json({ error: "Profile ID is required" });
+      const owned = await userOwnsProfile(authUser.userId, String(profileId));
+      if (!owned) return res.status(403).json({ error: "Forbidden" });
 
-      // Calculate endDate if durationDays is provided and endDate is not
       let calculatedEndDate = endDate;
       if (!calculatedEndDate && durationDays && startDate) {
         const start = new Date(startDate);
         const end = new Date(start);
         end.setDate(start.getDate() + parseInt(durationDays));
-        calculatedEndDate = end.toISOString().split('T')[0];
+        calculatedEndDate = end.toISOString().split("T")[0];
       }
 
       const newMed = await db.medication.create({
@@ -90,8 +246,8 @@ async function startServer() {
           doctor,
           notes,
           status: status || "active",
-          profileId: targetProfileId
-        }
+          profileId,
+        },
       });
       res.status(201).json(newMed);
     } catch (error) {
@@ -102,30 +258,39 @@ async function startServer() {
 
   app.put("/api/medications/:id", async (req, res) => {
     try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
       const { id } = req.params;
-      const { 
-        name, 
-        startDate, 
-        endDate, 
-        status, 
-        durationDays, 
-        doctor, 
-        notes, 
-        morningDosage, 
-        afternoonDosage, 
-        nightDosage, 
-        morningMeal, 
-        afternoonMeal, 
-        nightMeal 
+      const current = await db.medication.findUnique({
+        where: { id },
+        include: { profile: true },
+      });
+      if (!current) return res.status(404).json({ error: "Medication not found" });
+      if (current.profile.userId !== authUser.userId) return res.status(403).json({ error: "Forbidden" });
+
+      const {
+        name,
+        startDate,
+        endDate,
+        status,
+        durationDays,
+        doctor,
+        notes,
+        morningDosage,
+        afternoonDosage,
+        nightDosage,
+        morningMeal,
+        afternoonMeal,
+        nightMeal,
       } = req.body;
 
-      // Calculate endDate if durationDays is provided and endDate is not
       let calculatedEndDate = endDate;
       if (!calculatedEndDate && durationDays && startDate) {
         const start = new Date(startDate);
         const end = new Date(start);
         end.setDate(start.getDate() + parseInt(durationDays));
-        calculatedEndDate = end.toISOString().split('T')[0];
+        calculatedEndDate = end.toISOString().split("T")[0];
       }
 
       const updatedMed = await db.medication.update({
@@ -144,7 +309,7 @@ async function startServer() {
           doctor,
           notes,
           status: status || undefined,
-        }
+        },
       });
       res.json(updatedMed);
     } catch (error) {
@@ -155,10 +320,15 @@ async function startServer() {
 
   app.delete("/api/medications/:id", async (req, res) => {
     try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
       const { id } = req.params;
-      await db.medication.delete({
-        where: { id }
-      });
+      const current = await db.medication.findUnique({ where: { id }, include: { profile: true } });
+      if (!current) return res.status(404).json({ error: "Medication not found" });
+      if (current.profile.userId !== authUser.userId) return res.status(403).json({ error: "Forbidden" });
+
+      await db.medication.delete({ where: { id } });
       res.json({ message: "Medication deleted successfully" });
     } catch (error) {
       console.error(error);
@@ -171,20 +341,17 @@ async function startServer() {
     try {
       const doctors = await db.doctor.findMany();
       res.json(doctors);
-    } catch (error) {
+    } catch {
       res.status(500).json({ error: "Failed to fetch doctors" });
     }
   });
 
   app.post("/api/doctors", async (req, res) => {
     try {
-      console.log("POST /api/doctors", req.body);
       const { name, specialty, hospital, phone, email, address } = req.body;
-      const newDoc = await db.doctor.create({
-        data: { name, specialty, hospital, phone, email, address }
-      });
+      const newDoc = await db.doctor.create({ data: { name, specialty, hospital, phone, email, address } });
       res.status(201).json(newDoc);
-    } catch (error) {
+    } catch {
       res.status(500).json({ error: "Failed to create doctor" });
     }
   });
@@ -192,38 +359,38 @@ async function startServer() {
   // Visits API
   app.get("/api/visits", async (req, res) => {
     try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
       const { profileId } = req.query;
-      const where = profileId ? { profileId: String(profileId) } : {};
+      if (profileId) {
+        const owned = await userOwnsProfile(authUser.userId, String(profileId));
+        if (!owned) return res.status(403).json({ error: "Forbidden" });
+      }
+
       const visits = await db.visit.findMany({
-        where,
-        include: { doctor: true, profile: true }
+        where: profileId
+          ? { profileId: String(profileId) }
+          : { profile: { userId: authUser.userId } },
+        include: { doctor: true, profile: true },
       });
       res.json(visits);
-    } catch (error) {
+    } catch {
       res.status(500).json({ error: "Failed to fetch visits" });
     }
   });
 
   app.post("/api/visits", async (req, res) => {
     try {
-      console.log("POST /api/visits", req.body);
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
       const { date, time, location, type, reason, diagnosis, notes, status, profileId, doctorId } = req.body;
-      
-      let targetProfileId = profileId;
-      if (!targetProfileId) {
-        const firstProfile = await db.profile.findFirst();
-        if (firstProfile) targetProfileId = firstProfile.id;
-      }
-
-      let targetDoctorId = doctorId;
-      if (!targetDoctorId) {
-        const firstDoc = await db.doctor.findFirst();
-        if (firstDoc) targetDoctorId = firstDoc.id;
-      }
-
-      if (!targetProfileId || !targetDoctorId) {
+      if (!profileId || !doctorId) {
         return res.status(400).json({ error: "Profile ID and Doctor ID are required" });
       }
+      const owned = await userOwnsProfile(authUser.userId, String(profileId));
+      if (!owned) return res.status(403).json({ error: "Forbidden" });
 
       const newVisit = await db.visit.create({
         data: {
@@ -235,9 +402,9 @@ async function startServer() {
           diagnosis,
           notes,
           status: status || "upcoming",
-          profileId: targetProfileId,
-          doctorId: targetDoctorId
-        }
+          profileId,
+          doctorId,
+        },
       });
       res.status(201).json(newVisit);
     } catch (error) {
@@ -248,7 +415,14 @@ async function startServer() {
 
   app.put("/api/visits/:id", async (req, res) => {
     try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
       const { id } = req.params;
+      const current = await db.visit.findUnique({ where: { id }, include: { profile: true } });
+      if (!current) return res.status(404).json({ error: "Visit not found" });
+      if (current.profile.userId !== authUser.userId) return res.status(403).json({ error: "Forbidden" });
+
       const { date, time, location, type, reason, diagnosis, notes, status, doctorId } = req.body;
       const updatedVisit = await db.visit.update({
         where: { id },
@@ -261,8 +435,8 @@ async function startServer() {
           diagnosis,
           notes,
           status,
-          doctorId
-        }
+          doctorId,
+        },
       });
       res.json(updatedVisit);
     } catch (error) {
@@ -273,10 +447,15 @@ async function startServer() {
 
   app.delete("/api/visits/:id", async (req, res) => {
     try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
       const { id } = req.params;
-      await db.visit.delete({
-        where: { id }
-      });
+      const current = await db.visit.findUnique({ where: { id }, include: { profile: true } });
+      if (!current) return res.status(404).json({ error: "Visit not found" });
+      if (current.profile.userId !== authUser.userId) return res.status(403).json({ error: "Forbidden" });
+
+      await db.visit.delete({ where: { id } });
       res.json({ message: "Visit deleted successfully" });
     } catch (error) {
       console.error(error);
@@ -287,33 +466,34 @@ async function startServer() {
   // Profiles API
   app.get("/api/profiles", async (req, res) => {
     try {
-      const profiles = await db.profile.findMany();
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const profiles = await db.profile.findMany({ where: { userId: authUser.userId } });
       res.json(profiles);
-    } catch (error) {
+    } catch {
       res.status(500).json({ error: "Failed to fetch profiles" });
     }
   });
 
   app.post("/api/profiles", async (req, res) => {
     try {
-      console.log("POST /api/profiles", req.body);
-      const { name, age, gender, bloodGroup, height, weight, userId, relationship, conditions, allergies, emergencyContact, emergencyPhone } = req.body;
-      
-      // For prototype, if userId is missing, we'll try to find the first user or create a default one
-      let targetUserId = userId;
-      if (!targetUserId) {
-        let firstUser = await db.user.findFirst();
-        if (!firstUser) {
-          firstUser = await db.user.create({
-            data: {
-              email: "default@example.com",
-              password: "password",
-              name: "Default User"
-            }
-          });
-        }
-        targetUserId = firstUser.id;
-      }
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const {
+        name,
+        age,
+        gender,
+        bloodGroup,
+        height,
+        weight,
+        relationship,
+        conditions,
+        allergies,
+        emergencyContact,
+        emergencyPhone,
+      } = req.body;
 
       const newProfile = await db.profile.create({
         data: {
@@ -328,8 +508,8 @@ async function startServer() {
           allergies,
           emergencyContact,
           emergencyPhone,
-          userId: targetUserId
-        }
+          userId: authUser.userId,
+        },
       });
       res.status(201).json(newProfile);
     } catch (error) {
@@ -341,32 +521,36 @@ async function startServer() {
   // Reports API
   app.get("/api/reports", async (req, res) => {
     try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
       const { profileId } = req.query;
-      const where = profileId ? { profileId: String(profileId) } : {};
+      if (profileId) {
+        const owned = await userOwnsProfile(authUser.userId, String(profileId));
+        if (!owned) return res.status(403).json({ error: "Forbidden" });
+      }
+
       const reports = await db.report.findMany({
-        where,
-        include: { profile: true }
+        where: profileId
+          ? { profileId: String(profileId) }
+          : { profile: { userId: authUser.userId } },
+        include: { profile: true },
       });
       res.json(reports);
-    } catch (error) {
+    } catch {
       res.status(500).json({ error: "Failed to fetch reports" });
     }
   });
 
   app.post("/api/reports", async (req, res) => {
     try {
-      console.log("POST /api/reports", req.body);
-      const { title, date, type, result, status, profileId, doctorId } = req.body;
-      
-      let targetProfileId = profileId;
-      if (!targetProfileId) {
-        const firstProfile = await db.profile.findFirst();
-        if (firstProfile) targetProfileId = firstProfile.id;
-      }
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
 
-      if (!targetProfileId) {
-        return res.status(400).json({ error: "Profile ID is required" });
-      }
+      const { title, date, type, result, status, profileId, doctorId } = req.body;
+      if (!profileId) return res.status(400).json({ error: "Profile ID is required" });
+      const owned = await userOwnsProfile(authUser.userId, String(profileId));
+      if (!owned) return res.status(403).json({ error: "Forbidden" });
 
       const newReport = await db.report.create({
         data: {
@@ -376,8 +560,8 @@ async function startServer() {
           result,
           status: status || "completed",
           doctorId,
-          profileId: targetProfileId
-        }
+          profileId,
+        },
       });
       res.status(201).json(newReport);
     } catch (error) {
@@ -386,7 +570,6 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -394,7 +577,6 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Production static serving
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {

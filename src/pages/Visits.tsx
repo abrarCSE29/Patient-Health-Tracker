@@ -4,6 +4,7 @@ import { cn, formatDate, formatTime } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useData, postData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
+import { authenticatedFetch } from "@/lib/apiClient";
 
 export default function VisitsPage() {
   const { activeProfileId } = usePatient();
@@ -39,7 +40,7 @@ export default function VisitsPage() {
   const handleSave = async () => {
     try {
       if (editingId) {
-        await fetch(`/api/visits/${editingId}`, {
+        await authenticatedFetch(`/api/visits/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -77,7 +78,7 @@ export default function VisitsPage() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await fetch(`/api/visits/${deleteId}`, {
+      await authenticatedFetch(`/api/visits/${deleteId}`, {
         method: "DELETE"
       });
       setDeleteId(null);
@@ -89,7 +90,7 @@ export default function VisitsPage() {
 
   const handleStatusUpdate = async (id: string, status: string) => {
     try {
-      await fetch(`/api/visits/${id}`, {
+      await authenticatedFetch(`/api/visits/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })

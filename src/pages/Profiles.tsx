@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Plus, Users, UserRound, ChevronRight, MoreVertical, XCircle, Heart, ShieldAlert, Activity, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { BLOOD_GROUPS, RELATIONSHIPS } from "@/constants";
-import { useData, postData } from "@/hooks/useData";
+import { postData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
 
 export default function ProfilesPage() {
-  const { refreshProfiles } = usePatient();
-  const { data: profiles, refresh } = useData<any[]>("/api/profiles");
+  const { refreshProfiles, profiles, activeProfileId, setActiveProfileId } = usePatient();
   const [isAdding, setIsAdding] = useState(false);
-  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -23,18 +21,11 @@ export default function ProfilesPage() {
     emergencyPhone: ""
   });
 
-  useEffect(() => {
-    if (profiles && profiles.length > 0 && !activeProfileId) {
-      setActiveProfileId(profiles[0].id);
-    }
-  }, [profiles]);
-
   const handleSave = async () => {
     try {
       await postData("/api/profiles", formData);
       setIsAdding(false);
-      refresh();
-      refreshProfiles();
+      await refreshProfiles();
       setFormData({
         name: "",
         relationship: "Self",
@@ -50,7 +41,7 @@ export default function ProfilesPage() {
     }
   };
 
-  const activeProfile = profiles?.find(p => p.id === activeProfileId) || profiles?.[0];
+  const activeProfile = profiles?.find((p) => p.id === activeProfileId) || profiles?.[0];
 
   return (
     <div className="space-y-8">

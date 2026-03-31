@@ -8,6 +8,7 @@ import { MedicationRosterPDF } from "@/components/MedicationRosterPDF";
 
 import { useData, postData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
+import { authenticatedFetch } from "@/lib/apiClient";
 
 export default function MedicationsPage() {
   const { activeProfileId } = usePatient();
@@ -45,7 +46,7 @@ export default function MedicationsPage() {
   const handleSave = async () => {
     try {
       if (editingId) {
-        await fetch(`/api/medications/${editingId}`, {
+        await authenticatedFetch(`/api/medications/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -92,7 +93,7 @@ export default function MedicationsPage() {
     if (!deleteId) return;
     
     try {
-      await fetch(`/api/medications/${deleteId}`, {
+      await authenticatedFetch(`/api/medications/${deleteId}`, {
         method: "DELETE"
       });
       setDeleteId(null);
@@ -104,7 +105,7 @@ export default function MedicationsPage() {
 
   const handleStatusUpdate = async (id: string, status: string) => {
     try {
-      await fetch(`/api/medications/${id}`, {
+      await authenticatedFetch(`/api/medications/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })

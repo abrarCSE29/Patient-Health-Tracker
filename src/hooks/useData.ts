@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
+import { authenticatedFetch } from "@/lib/apiClient";
 
-export function useData<T>(url: string) {
+export function useData<T>(url: string | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchData = async () => {
+    if (!url) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await fetch(url);
+      const response = await authenticatedFetch(url);
       if (!response.ok) throw new Error("Failed to fetch data");
       const result = await response.json();
       setData(result);
@@ -27,7 +33,7 @@ export function useData<T>(url: string) {
 }
 
 export async function postData<T>(url: string, body: any): Promise<T> {
-  const response = await fetch(url, {
+  const response = await authenticatedFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

@@ -1,7 +1,7 @@
 # Patient Health Tracker — Reusable Project Context
 
 ## What this app is
-This is a **full-stack patient health tracker** for managing overall healthcare records across one or multiple patient profiles (self/dependents).
+This is a **full-stack patient health tracker** for managing overall healthcare records across one or multiple patient profiles (self/dependents), with strict per-user data isolation.
 
 Core capabilities implemented:
 - Manage **patient profiles**
@@ -20,7 +20,7 @@ Core capabilities implemented:
 - **Database:** Prisma + SQLite (`prisma/dev.db`) using `@prisma/adapter-libsql`
 - **PDF:** `@react-pdf/renderer` (`src/components/MedicationRosterPDF.tsx`)
 - **State/data:** Context + custom `useData` hook
-- **Auth (prototype):** localStorage-backed mock auth (`AuthContext`)
+- **Auth:** JWT access token + HttpOnly refresh token cookie
 
 ---
 
@@ -72,6 +72,12 @@ Important model fields:
 ### Health
 - `GET /api/health`
 
+### Auth
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
 ### Medications
 - `GET /api/medications?profileId=...`
 - `POST /api/medications`
@@ -119,17 +125,18 @@ Important model fields:
 ---
 
 ## Business workflows currently supported
-1. User logs in (mock auth)
-2. User selects active profile (or default first profile)
-3. User manages medications/visits/reports scoped to active profile
-4. User exports medication chart PDF for current data
+1. User logs in via `/api/auth/login` (access token in memory + refresh cookie)
+2. Session silently refreshes via `/api/auth/refresh`
+3. User selects active profile from user-scoped profiles only
+4. User manages medications/visits/reports strictly scoped to owned profiles
+5. User exports medication chart PDF for current profile data
 
 ---
 
 ## Notable implementation details and caveats
-- Backend includes prototype fallbacks:
-  - Auto-picks first profile/doctor in some create flows if ID missing
-  - Auto-creates a default user when creating first profile without userId
+- API routes are protected by bearer access token checks (except health/login/refresh).
+- Refresh token is stored in HttpOnly cookie (`/api/auth` path) and rotated on refresh.
+- Profile-linked endpoints enforce ownership checks by `profile.userId`.
 - Medication `endDate` can be calculated from `startDate + durationDays`
 - PDF export uses active medications grouped by meal timing and includes follow-up visits
 
@@ -152,7 +159,6 @@ Important model fields:
 
 ### Known gaps / inconsistencies to remember
 - `src/types/index.ts` appears **out of sync** with current Prisma schema/pages (legacy shape)
-- `useData` signature is `url: string`, while some pages pass nullable values (typing mismatch risk)
 - Notifications are mostly mock UI (no persistent backend flow)
 - Reports page has upload UI, but full file storage pipeline is not wired in backend
 

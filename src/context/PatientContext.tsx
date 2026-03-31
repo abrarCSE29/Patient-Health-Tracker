@@ -5,6 +5,11 @@ interface Profile {
   id: string;
   name: string;
   relationship: string;
+  age?: number;
+  bloodGroup?: string;
+  emergencyContact?: string;
+  conditions?: string;
+  allergies?: string;
 }
 
 interface PatientContextType {
@@ -22,8 +27,12 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profiles && profiles.length > 0 && !activeProfileId) {
-      // Set the first profile as active by default
+    if (!profiles || profiles.length === 0) {
+      setActiveProfileId(null);
+      return;
+    }
+
+    if (!activeProfileId || !profiles.some((p) => p.id === activeProfileId)) {
       setActiveProfileId(profiles[0].id);
     }
   }, [profiles, activeProfileId]);
