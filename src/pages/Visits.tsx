@@ -9,7 +9,7 @@ import { authenticatedFetch } from "@/lib/apiClient";
 export default function VisitsPage() {
   const { activeProfileId } = usePatient();
   const { data: visits, refresh } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
-  const { data: doctors } = useData<any[]>("/api/doctors");
+  const { data: doctors } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const [isScheduling, setIsScheduling] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);

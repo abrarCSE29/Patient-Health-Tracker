@@ -35,6 +35,7 @@ async function main() {
       hospital: 'City General Hospital',
       phone: '555-0101',
       email: 'sarah.smith@hospital.com',
+      profileId: profile.id,
     },
   });
 
@@ -45,6 +46,7 @@ async function main() {
       hospital: 'Westside Clinic',
       phone: '555-0102',
       email: 'michael.chen@clinic.com',
+      profileId: profile.id,
     },
   });
 

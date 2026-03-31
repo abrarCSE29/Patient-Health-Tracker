@@ -30,6 +30,16 @@ async function userOwnsProfile(userId: string, profileId: string) {
   return !!profile;
 }
 
+async function userOwnsDoctor(userId: string, doctorId: string) {
+  const doctor = await db.doctor.findFirst({
+    where: {
+      id: doctorId,
+      profile: { userId },
+    },
+  });
+  return !!doctor;
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -339,7 +349,18 @@ async function startServer() {
   // Doctors API
   app.get("/api/doctors", async (req, res) => {
     try {
-      const doctors = await db.doctor.findMany();
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const { profileId } = req.query;
+      if (!profileId) {
+        return res.status(400).json({ error: "Profile ID is required" });
+      }
+
+      const owned = await userOwnsProfile(authUser.userId, String(profileId));
+      if (!owned) return res.status(403).json({ error: "Forbidden" });
+
+      const doctors = await db.doctor.findMany({ where: { profileId: String(profileId) } });
       res.json(doctors);
     } catch {
       res.status(500).json({ error: "Failed to fetch doctors" });
@@ -348,8 +369,18 @@ async function startServer() {
 
   app.post("/api/doctors", async (req, res) => {
     try {
-      const { name, specialty, hospital, phone, email, address } = req.body;
-      const newDoc = await db.doctor.create({ data: { name, specialty, hospital, phone, email, address } });
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const { name, specialty, hospital, phone, email, address, profileId } = req.body;
+      if (!profileId) {
+        return res.status(400).json({ error: "Profile ID is required" });
+      }
+
+      const owned = await userOwnsProfile(authUser.userId, String(profileId));
+      if (!owned) return res.status(403).json({ error: "Forbidden" });
+
+      const newDoc = await db.doctor.create({ data: { name, specialty, hospital, phone, email, address, profileId } });
       res.status(201).json(newDoc);
     } catch {
       res.status(500).json({ error: "Failed to create doctor" });
@@ -391,6 +422,8 @@ async function startServer() {
       }
       const owned = await userOwnsProfile(authUser.userId, String(profileId));
       if (!owned) return res.status(403).json({ error: "Forbidden" });
+      const ownsDoctor = await userOwnsDoctor(authUser.userId, String(doctorId));
+      if (!ownsDoctor) return res.status(403).json({ error: "Forbidden" });
 
       const newVisit = await db.visit.create({
         data: {
@@ -424,6 +457,10 @@ async function startServer() {
       if (current.profile.userId !== authUser.userId) return res.status(403).json({ error: "Forbidden" });
 
       const { date, time, location, type, reason, diagnosis, notes, status, doctorId } = req.body;
+      if (doctorId) {
+        const ownsDoctor = await userOwnsDoctor(authUser.userId, String(doctorId));
+        if (!ownsDoctor) return res.status(403).json({ error: "Forbidden" });
+      }
       const updatedVisit = await db.visit.update({
         where: { id },
         data: {
@@ -551,6 +588,10 @@ async function startServer() {
       if (!profileId) return res.status(400).json({ error: "Profile ID is required" });
       const owned = await userOwnsProfile(authUser.userId, String(profileId));
       if (!owned) return res.status(403).json({ error: "Forbidden" });
+      if (doctorId) {
+        const ownsDoctor = await userOwnsDoctor(authUser.userId, String(doctorId));
+        if (!ownsDoctor) return res.status(403).json({ error: "Forbidden" });
+      }
 
       const newReport = await db.report.create({
         data: {

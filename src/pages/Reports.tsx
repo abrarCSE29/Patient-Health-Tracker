@@ -8,7 +8,7 @@ import { usePatient } from "@/context/PatientContext";
 export default function ReportsPage() {
   const { activeProfileId } = usePatient();
   const { data: reports, refresh } = useData<any[]>(activeProfileId ? `/api/reports?profileId=${activeProfileId}` : null);
-  const { data: doctors } = useData<any[]>("/api/doctors");
+  const { data: doctors } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const [isUploading, setIsUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   

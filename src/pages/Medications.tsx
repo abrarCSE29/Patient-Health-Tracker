@@ -11,9 +11,9 @@ import { usePatient } from "@/context/PatientContext";
 import { authenticatedFetch } from "@/lib/apiClient";
 
 export default function MedicationsPage() {
-  const { activeProfileId } = usePatient();
+  const { activeProfileId, activeProfile } = usePatient();
   const { data: meds, refresh } = useData<any[]>(activeProfileId ? `/api/medications?profileId=${activeProfileId}` : null);
-  const { data: doctors } = useData<any[]>('/api/doctors');
+  const { data: doctors } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const { data: visits } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -21,6 +21,16 @@ export default function MedicationsPage() {
   const [viewMode, setViewMode] = useState<'current' | 'history'>('current');
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [error, setError] = useState("");
+  const [activeTimeSlots, setActiveTimeSlots] = useState<{
+    morning: boolean;
+    afternoon: boolean;
+    night: boolean;
+  }>({
+    morning: false,
+    afternoon: false,
+    night: false,
+  });
   
   const initialFormData = {
     name: "",
@@ -44,7 +54,13 @@ export default function MedicationsPage() {
   );
 
   const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setError("Medication name is required.");
+      return;
+    }
+
     try {
+      setError("");
       if (editingId) {
         await authenticatedFetch(`/api/medications/${editingId}`, {
           method: "PUT",
@@ -66,8 +82,10 @@ export default function MedicationsPage() {
       setEditingId(null);
       refresh();
       setFormData(initialFormData);
+      setActiveTimeSlots({ morning: false, afternoon: false, night: false });
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to save medication.");
     }
   };
 
@@ -85,8 +103,36 @@ export default function MedicationsPage() {
       afternoonMeal: med.afternoonMeal || "",
       nightMeal: med.nightMeal || ""
     });
+    setActiveTimeSlots({
+      morning: !!med.morningDosage,
+      afternoon: !!med.afternoonDosage,
+      night: !!med.nightDosage,
+    });
+    setError("");
     setEditingId(med.id);
     setIsAdding(true);
+  };
+
+  const toggleTimeSlot = (slot: 'morning' | 'afternoon' | 'night') => {
+    setActiveTimeSlots((current) => {
+      const nextValue = !current[slot];
+
+      if (!nextValue) {
+        setFormData((prev) => ({
+          ...prev,
+          ...(slot === 'morning'
+            ? { morningDosage: "", morningMeal: "" }
+            : slot === 'afternoon'
+              ? { afternoonDosage: "", afternoonMeal: "" }
+              : { nightDosage: "", nightMeal: "" }),
+        }));
+      }
+
+      return {
+        ...current,
+        [slot]: nextValue,
+      };
+    });
   };
 
   const handleDelete = async () => {
@@ -126,7 +172,7 @@ export default function MedicationsPage() {
       const blob = await pdf(
         <MedicationRosterPDF 
           medications={meds} 
-          profileName={activeProfileId ? "Patient" : undefined}
+          profileName={activeProfile?.name}
           visits={visits || []}
         />
       ).toBlob();
@@ -394,6 +440,8 @@ export default function MedicationsPage() {
                     setIsAdding(false);
                     setEditingId(null);
                     setFormData(initialFormData);
+                    setActiveTimeSlots({ morning: false, afternoon: false, night: false });
+                    setError("");
                   }} 
                   className="p-2 hover:bg-neutral-100 rounded-full transition-colors"
                 >
@@ -402,9 +450,15 @@ export default function MedicationsPage() {
               </div>
               
               <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
+                    {error}
+                  </div>
+                )}
+
                 {/* Search Master Catalog */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Search Medication</label>
+                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Medication Name *</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                     <input 
@@ -460,84 +514,111 @@ export default function MedicationsPage() {
                 {/* Timing & Dosage Options */}
                 <div className="space-y-4 p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                   <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Dosage & Timing</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {([
+                      { key: 'morning', label: 'Morning' },
+                      { key: 'afternoon', label: 'Afternoon' },
+                      { key: 'night', label: 'Night' },
+                    ] as const).map((slot) => (
+                      <button
+                        key={slot.key}
+                        type="button"
+                        onClick={() => toggleTimeSlot(slot.key)}
+                        className={cn(
+                          "px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all",
+                          activeTimeSlots[slot.key]
+                            ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white border-indigo-500"
+                            : "bg-white text-neutral-500 border-neutral-200 hover:border-indigo-300"
+                        )}
+                      >
+                        {slot.label}
+                      </button>
+                    ))}
+                  </div>
                   
                   {/* Morning */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-neutral-500 uppercase">Morning Pills (Qty)</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 1" 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
-                        value={formData.morningDosage}
-                        onChange={(e) => setFormData({...formData, morningDosage: e.target.value})}
-                      />
+                  {activeTimeSlots.morning && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-neutral-500 uppercase">Morning Pills (Qty)</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 1" 
+                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
+                          value={formData.morningDosage}
+                          onChange={(e) => setFormData({...formData, morningDosage: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-neutral-500 uppercase">Morning Timing</label>
+                        <select 
+                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
+                          value={formData.morningMeal}
+                          onChange={(e) => setFormData({...formData, morningMeal: e.target.value})}
+                        >
+                          <option value="">None</option>
+                          <option value="Before Meal">Before Meal</option>
+                          <option value="After Meal">After Meal</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-neutral-500 uppercase">Morning Timing</label>
-                      <select 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
-                        value={formData.morningMeal}
-                        onChange={(e) => setFormData({...formData, morningMeal: e.target.value})}
-                      >
-                        <option value="">None</option>
-                        <option value="Before Meal">Before Meal</option>
-                        <option value="After Meal">After Meal</option>
-                      </select>
-                    </div>
-                  </div>
+                  )}
 
                   {/* Afternoon */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-neutral-500 uppercase">Afternoon Pills (Qty)</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 1" 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
-                        value={formData.afternoonDosage}
-                        onChange={(e) => setFormData({...formData, afternoonDosage: e.target.value})}
-                      />
+                  {activeTimeSlots.afternoon && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-neutral-500 uppercase">Afternoon Pills (Qty)</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 1" 
+                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
+                          value={formData.afternoonDosage}
+                          onChange={(e) => setFormData({...formData, afternoonDosage: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-neutral-500 uppercase">Afternoon Timing</label>
+                        <select 
+                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
+                          value={formData.afternoonMeal}
+                          onChange={(e) => setFormData({...formData, afternoonMeal: e.target.value})}
+                        >
+                          <option value="">None</option>
+                          <option value="Before Meal">Before Meal</option>
+                          <option value="After Meal">After Meal</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-neutral-500 uppercase">Afternoon Timing</label>
-                      <select 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
-                        value={formData.afternoonMeal}
-                        onChange={(e) => setFormData({...formData, afternoonMeal: e.target.value})}
-                      >
-                        <option value="">None</option>
-                        <option value="Before Meal">Before Meal</option>
-                        <option value="After Meal">After Meal</option>
-                      </select>
-                    </div>
-                  </div>
+                  )}
 
                   {/* Night */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-neutral-500 uppercase">Night Pills (Qty)</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 1" 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
-                        value={formData.nightDosage}
-                        onChange={(e) => setFormData({...formData, nightDosage: e.target.value})}
-                      />
+                  {activeTimeSlots.night && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-neutral-500 uppercase">Night Pills (Qty)</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 1" 
+                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
+                          value={formData.nightDosage}
+                          onChange={(e) => setFormData({...formData, nightDosage: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-neutral-500 uppercase">Night Timing</label>
+                        <select 
+                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
+                          value={formData.nightMeal}
+                          onChange={(e) => setFormData({...formData, nightMeal: e.target.value})}
+                        >
+                          <option value="">None</option>
+                          <option value="Before Meal">Before Meal</option>
+                          <option value="After Meal">After Meal</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-neutral-500 uppercase">Night Timing</label>
-                      <select 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
-                        value={formData.nightMeal}
-                        onChange={(e) => setFormData({...formData, nightMeal: e.target.value})}
-                      >
-                        <option value="">None</option>
-                        <option value="Before Meal">Before Meal</option>
-                        <option value="After Meal">After Meal</option>
-                      </select>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

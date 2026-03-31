@@ -3,10 +3,13 @@ import { Plus, UserRound, Phone, Mail, MapPin, MoreVertical, Search, ChevronRigh
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useData, postData } from "@/hooks/useData";
+import { usePatient } from "@/context/PatientContext";
 
 export default function DoctorsPage() {
-  const { data: doctors, refresh } = useData<any[]>("/api/doctors");
+  const { activeProfileId, activeProfile } = usePatient();
+  const { data: doctors, refresh } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState("");
   
   const [formData, setFormData] = useState({
     name: "",
@@ -18,8 +21,14 @@ export default function DoctorsPage() {
   });
 
   const handleSave = async () => {
+    if (!activeProfileId) {
+      setError("Please create or select a patient profile first.");
+      return;
+    }
+
     try {
-      await postData("/api/doctors", formData);
+      setError("");
+      await postData("/api/doctors", { ...formData, profileId: activeProfileId });
       setIsAdding(false);
       refresh();
       setFormData({
@@ -32,6 +41,7 @@ export default function DoctorsPage() {
       });
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to save doctor.");
     }
   };
 
@@ -40,16 +50,29 @@ export default function DoctorsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">My Doctors</h1>
-          <p className="text-slate-500">Manage your healthcare team and contact information.</p>
+          <p className="text-slate-500">Manage doctors for {activeProfile?.name || "the selected profile"}.</p>
         </div>
         <button 
-          onClick={() => setIsAdding(true)}
+          onClick={() => {
+            if (!activeProfileId) {
+              setError("Please create or select a patient profile first.");
+              return;
+            }
+            setError("");
+            setIsAdding(true);
+          }}
           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus className="w-5 h-5" />
           Add Doctor
         </button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {doctors?.map((doc) => (
