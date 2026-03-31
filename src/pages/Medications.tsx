@@ -153,8 +153,8 @@ export default function MedicationsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">Medications</h1>
-          <p className="text-neutral-500">Manage your prescriptions and daily schedules.</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Medications</h1>
+          <p className="text-slate-500">Manage your prescriptions and daily schedules.</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -166,7 +166,7 @@ export default function MedicationsPage() {
           </button>
           <button 
             onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
           >
             <Plus className="w-5 h-5" />
             Add Medication
@@ -178,7 +178,7 @@ export default function MedicationsPage() {
         {/* Active Medications List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-neutral-900">
+            <h2 className="text-xl font-bold text-slate-800">
               {viewMode === 'current' ? 'Active Medications' : 'Medication History'}
             </h2>
             <div className="flex gap-2 bg-neutral-100 p-1 rounded-full">
@@ -187,7 +187,7 @@ export default function MedicationsPage() {
                 className={cn(
                   "px-4 py-1.5 text-xs font-bold rounded-full uppercase tracking-wider transition-all",
                   viewMode === 'current' 
-                    ? "bg-white text-neutral-900 shadow-sm" 
+                    ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm" 
                     : "text-neutral-400 hover:text-neutral-600"
                 )}
               >
@@ -198,7 +198,7 @@ export default function MedicationsPage() {
                 className={cn(
                   "px-4 py-1.5 text-xs font-bold rounded-full uppercase tracking-wider transition-all",
                   viewMode === 'history' 
-                    ? "bg-white text-neutral-900 shadow-sm" 
+                    ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm" 
                     : "text-neutral-400 hover:text-neutral-600"
                 )}
               >
@@ -217,11 +217,11 @@ export default function MedicationsPage() {
               >
                 <div className="flex items-start justify-between relative z-10">
                   <div className="flex gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-neutral-50 flex items-center justify-center text-neutral-400 group-hover:bg-neutral-900 group-hover:text-white transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
                       <Pill className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-neutral-900 text-lg">{med.name}</h3>
+                      <h3 className="font-bold text-slate-800 text-lg">{med.name}</h3>
                       
                       {/* Timings Display */}
                       <div className="flex flex-wrap gap-2 mt-2">
@@ -283,7 +283,7 @@ export default function MedicationsPage() {
                         e.stopPropagation();
                         handleEdit(med);
                       }}
-                      className="p-2 hover:bg-neutral-100 rounded-lg transition-colors text-neutral-400 hover:text-neutral-900"
+                      className="p-2 hover:bg-indigo-50 rounded-lg transition-colors text-neutral-400 hover:text-indigo-600"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
@@ -300,8 +300,8 @@ export default function MedicationsPage() {
                 </div>
                 
                 {/* Progress Bar */}
-                <div className="mt-6 h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-neutral-900 rounded-full w-1/2" />
+                <div className="mt-6 h-1.5 w-full bg-indigo-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full w-1/2" />
                 </div>
               </motion.div>
             ))}
@@ -317,7 +317,7 @@ export default function MedicationsPage() {
 
         {/* Today's Schedule Sidebar */}
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-neutral-900">Today's Schedule</h2>
+          <h2 className="text-xl font-bold text-slate-800">Today's Schedule</h2>
           <div className="space-y-4">
             {meds?.filter(m => m.status === 'active').map((med, idx) => (
               <div key={idx} className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-neutral-200 shadow-sm relative overflow-hidden">
@@ -341,7 +341,7 @@ export default function MedicationsPage() {
                       </button>
                     </div>
                   </div>
-                  <p className="font-bold text-neutral-900">{med.name}</p>
+                  <p className="font-bold text-slate-800">{med.name}</p>
                   
                   {/* Timing Info in Schedule */}
                   <div className="flex gap-1 mt-1">
@@ -351,7 +351,7 @@ export default function MedicationsPage() {
                   </div>
 
                   {med.status !== "taken" && (
-                    <button className="mt-3 w-full py-2 bg-neutral-900 text-white text-xs font-bold rounded-lg hover:bg-neutral-800 transition-all">
+                    <button className="mt-3 w-full py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs font-bold rounded-lg hover:from-indigo-600 hover:to-violet-600 transition-all">
                       Mark as Taken
                     </button>
                   )}
@@ -385,7 +385,7 @@ export default function MedicationsPage() {
               className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-neutral-900">
+                <h2 className="text-xl font-bold text-slate-800">
                   {editingId ? "Edit Medication" : "Add New Medication"}
                 </h2>
                 <button 
@@ -409,7 +409,7 @@ export default function MedicationsPage() {
                     <input 
                       type="text" 
                       placeholder="Search by name or generic..." 
-                      className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-neutral-900 focus:border-transparent outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-indigo-300 focus:border-transparent outline-none transition-all"
                       value={formData.name}
                       onChange={(e) => {
                         setFormData({...formData, name: e.target.value});
@@ -467,7 +467,7 @@ export default function MedicationsPage() {
                       <input 
                         type="text" 
                         placeholder="e.g. 1" 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-neutral-900"
+                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
                         value={formData.morningDosage}
                         onChange={(e) => setFormData({...formData, morningDosage: e.target.value})}
                       />
@@ -475,7 +475,7 @@ export default function MedicationsPage() {
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-neutral-500 uppercase">Morning Timing</label>
                       <select 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-neutral-900"
+                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
                         value={formData.morningMeal}
                         onChange={(e) => setFormData({...formData, morningMeal: e.target.value})}
                       >
@@ -493,7 +493,7 @@ export default function MedicationsPage() {
                       <input 
                         type="text" 
                         placeholder="e.g. 1" 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-neutral-900"
+                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
                         value={formData.afternoonDosage}
                         onChange={(e) => setFormData({...formData, afternoonDosage: e.target.value})}
                       />
@@ -501,7 +501,7 @@ export default function MedicationsPage() {
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-neutral-500 uppercase">Afternoon Timing</label>
                       <select 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-neutral-900"
+                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
                         value={formData.afternoonMeal}
                         onChange={(e) => setFormData({...formData, afternoonMeal: e.target.value})}
                       >
@@ -519,7 +519,7 @@ export default function MedicationsPage() {
                       <input 
                         type="text" 
                         placeholder="e.g. 1" 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-neutral-900"
+                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
                         value={formData.nightDosage}
                         onChange={(e) => setFormData({...formData, nightDosage: e.target.value})}
                       />
@@ -527,7 +527,7 @@ export default function MedicationsPage() {
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-neutral-500 uppercase">Night Timing</label>
                       <select 
-                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-neutral-900"
+                        className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-300"
                         value={formData.nightMeal}
                         onChange={(e) => setFormData({...formData, nightMeal: e.target.value})}
                       >
@@ -544,7 +544,7 @@ export default function MedicationsPage() {
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Start Date</label>
                     <input 
                       type="date" 
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                       value={formData.startDate}
                       onChange={(e) => setFormData({...formData, startDate: e.target.value})}
                     />
@@ -554,7 +554,7 @@ export default function MedicationsPage() {
                     <input 
                       type="number" 
                       placeholder="30" 
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                       value={formData.durationDays}
                       onChange={(e) => setFormData({...formData, durationDays: e.target.value})}
                     />
@@ -564,7 +564,7 @@ export default function MedicationsPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Prescribing Doctor</label>
                   <select 
-                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900 appearance-none"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300 appearance-none"
                     value={formData.doctor}
                     onChange={(e) => setFormData({...formData, doctor: e.target.value})}
                   >
@@ -581,7 +581,7 @@ export default function MedicationsPage() {
                   <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Notes (Optional)</label>
                   <textarea 
                     placeholder="e.g. Take with food, avoid alcohol..." 
-                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900 min-h-[100px] resize-none"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300 min-h-[100px] resize-none"
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
                   />
@@ -601,7 +601,7 @@ export default function MedicationsPage() {
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="flex-1 py-3 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200"
+                  className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
                 >
                   {editingId ? "Update Medication" : "Save Medication"}
                 </button>

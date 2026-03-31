@@ -31,18 +31,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/30 to-indigo-50/40 flex flex-col items-center justify-center p-4">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-neutral-900 text-white rounded-2xl mb-6 shadow-xl shadow-neutral-200">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-2xl mb-6 shadow-xl shadow-indigo-200">
             <Heart className="w-8 h-8 fill-current" />
           </div>
-          <h1 className="text-3xl font-black text-neutral-900 tracking-tight mb-2">Welcome Back</h1>
-          <p className="text-neutral-500 font-medium">Your health journey continues here.</p>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Welcome Back</h1>
+          <p className="text-slate-500 font-medium">Your health journey continues here.</p>
         </div>
 
         <div className="bg-white p-8 rounded-[2.5rem] border border-neutral-200 shadow-xl shadow-neutral-100">
@@ -62,7 +62,7 @@ export default function LoginPage() {
                   type="email" 
                   required
                   placeholder="name@example.com" 
-                  className="w-full pl-12 pr-4 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-medium"
+                  className="w-full pl-12 pr-4 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-medium"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -72,7 +72,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between ml-1">
                 <label className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Password</label>
-                <button type="button" className="text-[10px] font-black text-neutral-900 uppercase tracking-[0.2em] hover:underline">Forgot?</button>
+                <button type="button" className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] hover:underline">Forgot?</button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -80,7 +80,7 @@ export default function LoginPage() {
                   type="password" 
                   required
                   placeholder="••••••••" 
-                  className="w-full pl-12 pr-4 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-medium"
+                  className="w-full pl-12 pr-4 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-medium"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -90,7 +90,7 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full py-4 bg-neutral-900 text-white font-black text-sm rounded-2xl hover:bg-neutral-800 transition-all shadow-xl shadow-neutral-200 uppercase tracking-widest flex items-center justify-center gap-2 group disabled:opacity-50"
+              className="w-full py-4 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-black text-sm rounded-2xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-xl shadow-indigo-200 uppercase tracking-widest flex items-center justify-center gap-2 group disabled:opacity-50"
             >
               {loading ? (
                 <Activity className="w-5 h-5 animate-spin" />
@@ -106,7 +106,7 @@ export default function LoginPage() {
           <div className="mt-8 pt-8 border-t border-neutral-100 text-center">
             <p className="text-sm text-neutral-500 font-medium">
               Don't have an account?{" "}
-              <button className="text-neutral-900 font-black hover:underline">Create Account</button>
+              <button className="text-indigo-600 font-black hover:underline">Create Account</button>
             </p>
           </div>
         </div>

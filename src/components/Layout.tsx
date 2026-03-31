@@ -7,7 +7,6 @@ import {
   FileText, 
   Calendar, 
   Bell, 
-  Settings,
   LogOut,
   ChevronRight,
   Menu,
@@ -17,7 +16,6 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
-import { usePatient } from "@/context/PatientContext";
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -33,7 +31,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { profiles, activeProfileId, setActiveProfileId, activeProfile } = usePatient();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
@@ -46,27 +43,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const userInitials = user?.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase() || "U";
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/30 to-indigo-50/40 text-slate-800 flex">
       {/* Sidebar - Desktop */}
       <motion.aside
         initial={false}
         animate={{ width: isSidebarOpen ? 260 : 80 }}
         className={cn(
-          "hidden md:flex flex-col bg-white border-r border-neutral-200 sticky top-0 h-screen transition-all duration-300 ease-in-out",
+          "hidden md:flex flex-col bg-white/75 backdrop-blur-md border-r border-slate-200/80 sticky top-0 h-screen transition-all duration-300 ease-in-out",
           !isSidebarOpen && "items-center"
         )}
       >
         <div className="p-6 flex items-center justify-between">
           {isSidebarOpen && (
-            <span className="text-xl font-bold text-neutral-900 tracking-tight">
+            <span className="text-xl font-bold text-slate-800 tracking-tight">
               HealthTracker
             </span>
           )}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
           >
-            <Menu className="w-5 h-5 text-neutral-500" />
+            <Menu className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
@@ -78,13 +75,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300",
                   isActive
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-600 hover:bg-neutral-100"
+                    ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-200"
+                    : "text-slate-600 hover:bg-white/80 hover:text-slate-800"
                 )}
               >
-                <item.icon className={cn("w-5 h-5 shrink-0", isActive ? "text-white" : "text-neutral-500 group-hover:text-neutral-900")} />
+                <item.icon className={cn("w-5 h-5 shrink-0", isActive ? "text-white" : "text-slate-400 group-hover:text-indigo-500")} />
                 {isSidebarOpen && (
                   <span className="font-medium text-sm">{item.name}</span>
                 )}
@@ -96,21 +93,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-neutral-100 relative">
+        <div className="p-4 border-t border-slate-200/70 relative">
           <button 
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 w-full rounded-xl hover:bg-neutral-100 transition-all duration-200 group",
+              "flex items-center gap-3 px-3 py-2.5 w-full rounded-xl hover:bg-white/80 transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300",
               !isSidebarOpen && "justify-center"
             )}
           >
-            <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center text-white text-xs font-bold shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm shadow-indigo-200">
               {userInitials}
             </div>
             {isSidebarOpen && (
               <div className="text-left overflow-hidden">
-                <p className="text-sm font-bold text-neutral-900 truncate">{user?.name || "User"}</p>
-                <p className="text-[10px] font-medium text-neutral-400 truncate">{user?.email || "user@example.com"}</p>
+                <p className="text-sm font-bold text-slate-800 truncate">{user?.name || "User"}</p>
+                <p className="text-[10px] font-medium text-slate-500 truncate">{user?.email || "user@example.com"}</p>
               </div>
             )}
           </button>
@@ -124,17 +121,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   className={cn(
-                    "absolute bottom-full left-4 right-4 mb-2 bg-white rounded-2xl border border-neutral-200 shadow-xl z-20 overflow-hidden p-1",
+                    "absolute bottom-full left-4 right-4 mb-2 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/60 z-20 overflow-hidden p-1",
                     !isSidebarOpen && "left-full ml-2 bottom-4 w-48"
                   )}
                 >
-                  <div className="px-4 py-2 border-b border-neutral-100 md:hidden">
-                    <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Account</p>
-                    <p className="text-sm font-bold text-neutral-900 truncate">{user?.name}</p>
+                  <div className="px-4 py-2 border-b border-slate-100 md:hidden">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Account</p>
+                    <p className="text-sm font-bold text-slate-800 truncate">{user?.name}</p>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-2.5 w-full rounded-xl text-red-600 hover:bg-red-50 transition-all text-sm font-bold"
+                    className="flex items-center gap-3 px-4 py-2.5 w-full rounded-xl text-rose-600 hover:bg-rose-50 transition-all text-sm font-bold"
                   >
                     <LogOut className="w-4 h-4" />
                     Logout
@@ -154,7 +151,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+            className="fixed inset-0 bg-slate-900/25 backdrop-blur-sm z-40 md:hidden"
           />
         )}
       </AnimatePresence>
@@ -164,17 +161,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         initial={{ x: "-100%" }}
         animate={{ x: isMobileMenuOpen ? 0 : "-100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="fixed inset-y-0 left-0 w-72 bg-white z-50 md:hidden flex flex-col shadow-2xl"
+        className="fixed inset-y-0 left-0 w-72 bg-slate-50 z-50 md:hidden flex flex-col shadow-2xl"
       >
         <div className="p-6 flex items-center justify-between">
-          <span className="text-xl font-bold text-neutral-900 tracking-tight">
+          <span className="text-xl font-bold text-slate-800 tracking-tight">
             HealthTracker
           </span>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-white rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-neutral-500" />
+            <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
         <nav className="flex-1 px-4 space-y-1">
@@ -188,11 +185,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
                   isActive
-                    ? "bg-neutral-900 text-white shadow-lg shadow-neutral-200"
-                    : "text-neutral-600 hover:bg-neutral-100"
+                    ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-200"
+                    : "text-slate-600 hover:bg-white"
                 )}
               >
-                <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-neutral-500")} />
+                <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-400")} />
                 <span className="font-medium">{item.name}</span>
               </Link>
             );
@@ -202,18 +199,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-6 md:px-8 shrink-0">
+        <header className="h-16 bg-white/70 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between px-6 md:px-8 shrink-0">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 hover:bg-neutral-100 rounded-lg md:hidden"
+              className="p-2 -ml-2 hover:bg-white rounded-lg md:hidden"
             >
-              <Menu className="w-5 h-5 text-neutral-500" />
+              <Menu className="w-5 h-5 text-slate-500" />
             </button>
           </div>
 
           <div className="flex items-center gap-4 md:hidden">
-            <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center text-white text-xs font-bold">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-indigo-200">
               {userInitials}
             </div>
           </div>

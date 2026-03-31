@@ -108,12 +108,12 @@ export default function VisitsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">Doctor Visits</h1>
-          <p className="text-neutral-500">Schedule and track your medical appointments and follow-ups.</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Doctor Visits</h1>
+          <p className="text-slate-500">Schedule and track your medical appointments and follow-ups.</p>
         </div>
         <button 
           onClick={() => setIsScheduling(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus className="w-5 h-5" />
           Schedule Visit
@@ -126,7 +126,7 @@ export default function VisitsPage() {
           onClick={() => setActiveTab("upcoming")}
           className={cn(
             "px-6 py-2 rounded-xl text-sm font-bold transition-all",
-            activeTab === "upcoming" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-700"
+            activeTab === "upcoming" ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm" : "text-neutral-500 hover:text-neutral-700"
           )}
         >
           Upcoming
@@ -135,7 +135,7 @@ export default function VisitsPage() {
           onClick={() => setActiveTab("past")}
           className={cn(
             "px-6 py-2 rounded-xl text-sm font-bold transition-all",
-            activeTab === "past" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-700"
+            activeTab === "past" ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm" : "text-neutral-500 hover:text-neutral-700"
           )}
         >
           Past Visits
@@ -151,7 +151,7 @@ export default function VisitsPage() {
               animate={{ opacity: 1, x: 0 }}
               className="bg-white p-6 rounded-3xl border border-neutral-200 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center gap-6 group"
             >
-              <div className="w-16 h-16 rounded-2xl bg-neutral-900 flex flex-col items-center justify-center text-white shrink-0 shadow-lg shadow-neutral-200">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex flex-col items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-200">
                 <span className="text-[10px] font-bold uppercase leading-none opacity-70">
                   {formatDate(visit.date).split(' ')[0]}
                 </span>
@@ -162,7 +162,7 @@ export default function VisitsPage() {
 
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-bold text-neutral-900">{visit.doctor?.name}</h3>
+                  <h3 className="text-xl font-bold text-slate-800">{visit.doctor?.name}</h3>
                   <span className="px-2 py-0.5 bg-neutral-100 text-neutral-500 text-[10px] font-bold rounded-full uppercase tracking-widest">{visit.doctor?.specialty || "General"}</span>
                 </div>
                 <div className="flex flex-wrap gap-4 text-sm text-neutral-500 font-medium">
@@ -189,7 +189,7 @@ export default function VisitsPage() {
                 )}
                 <button 
                   onClick={() => handleEdit(visit)}
-                  className="p-2 hover:bg-neutral-100 rounded-xl transition-colors text-neutral-400 hover:text-neutral-900"
+                  className="p-2 hover:bg-indigo-50 rounded-xl transition-colors text-neutral-400 hover:text-indigo-600"
                   title="Edit / Reschedule"
                 >
                   <Edit2 className="w-5 h-5" />
@@ -210,7 +210,7 @@ export default function VisitsPage() {
               <Calendar className="w-8 h-8" />
             </div>
             <div>
-              <p className="font-bold text-neutral-900">No {activeTab} visits recorded</p>
+              <p className="font-bold text-slate-800">No {activeTab} visits recorded</p>
               <p className="text-sm text-neutral-500">Your {activeTab} appointments will appear here.</p>
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function VisitsPage() {
               className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-neutral-900">
+                <h2 className="text-xl font-bold text-slate-800">
                   {editingId ? "Reschedule / Edit Visit" : "Schedule Doctor Visit"}
                 </h2>
                 <button onClick={resetForm} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
@@ -247,7 +247,7 @@ export default function VisitsPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Select Doctor</label>
                   <select 
-                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900 appearance-none"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300 appearance-none"
                     value={formData.doctorId}
                     onChange={(e) => setFormData({...formData, doctorId: e.target.value})}
                   >
@@ -263,7 +263,7 @@ export default function VisitsPage() {
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Date</label>
                     <input 
                       type="date" 
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
                     />
@@ -272,7 +272,7 @@ export default function VisitsPage() {
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Time</label>
                     <input 
                       type="time" 
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                       value={formData.time}
                       onChange={(e) => setFormData({...formData, time: e.target.value})}
                     />
@@ -284,7 +284,7 @@ export default function VisitsPage() {
                   <input 
                     type="text" 
                     placeholder="e.g. Annual checkup, flu symptoms" 
-                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                     value={formData.reason}
                     onChange={(e) => setFormData({...formData, reason: e.target.value})}
                   />
@@ -294,7 +294,7 @@ export default function VisitsPage() {
                   <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Notes (Optional)</label>
                   <textarea 
                     placeholder="Any specific concerns to discuss..." 
-                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900 min-h-[100px] resize-none"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300 min-h-[100px] resize-none"
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
                   />
@@ -310,7 +310,7 @@ export default function VisitsPage() {
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="flex-1 py-3 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200"
+                  className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
                 >
                   {editingId ? "Save Changes" : "Schedule Visit"}
                 </button>

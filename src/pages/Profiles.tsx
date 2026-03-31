@@ -56,12 +56,12 @@ export default function ProfilesPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">Patient Profiles</h1>
-          <p className="text-neutral-500">Manage health profiles for yourself and your dependents.</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Patient Profiles</h1>
+          <p className="text-slate-500">Manage health profiles for yourself and your dependents.</p>
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus className="w-5 h-5" />
           Add Profile
@@ -80,8 +80,8 @@ export default function ProfilesPage() {
                 className={cn(
                   "w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left group",
                   activeProfileId === profile.id 
-                    ? "bg-neutral-900 border-neutral-900 text-white shadow-xl shadow-neutral-200" 
-                    : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-900"
+                    ? "bg-gradient-to-r from-indigo-500 to-violet-500 border-indigo-500 text-white shadow-xl shadow-indigo-200" 
+                    : "bg-white border-neutral-200 text-neutral-600 hover:border-indigo-300"
                 )}
               >
                 <div className={cn(
@@ -112,8 +112,8 @@ export default function ProfilesPage() {
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-[2rem] border border-neutral-200 shadow-sm overflow-hidden"
             >
-              <div className="h-32 bg-neutral-900 relative">
-                <div className="absolute -bottom-12 left-8 w-24 h-24 rounded-3xl bg-white border-4 border-white shadow-xl flex items-center justify-center text-neutral-900">
+              <div className="h-32 bg-gradient-to-r from-indigo-500 to-violet-500 relative">
+                <div className="absolute -bottom-12 left-8 w-24 h-24 rounded-3xl bg-white border-4 border-white shadow-xl flex items-center justify-center text-indigo-600">
                   <UserRound className="w-12 h-12" />
                 </div>
               </div>
@@ -121,7 +121,7 @@ export default function ProfilesPage() {
               <div className="pt-16 p-8 space-y-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-3xl font-bold text-neutral-900">{activeProfile.name}</h2>
+                    <h2 className="text-3xl font-bold text-slate-800">{activeProfile.name}</h2>
                     <p className="text-neutral-500 font-medium">{activeProfile.relationship} • {activeProfile.age} Years Old</p>
                   </div>
                   <button className="px-6 py-2.5 border border-neutral-200 rounded-xl font-bold text-sm hover:bg-neutral-50 transition-all">
@@ -132,23 +132,23 @@ export default function ProfilesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="p-4 bg-neutral-50 rounded-2xl space-y-1">
                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Blood Group</p>
-                    <p className="text-xl font-black text-neutral-900">{activeProfile.bloodGroup}</p>
+                    <p className="text-xl font-black text-slate-800">{activeProfile.bloodGroup}</p>
                   </div>
                   <div className="p-4 bg-neutral-50 rounded-2xl space-y-1">
                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Emergency Contact</p>
-                    <p className="text-xl font-black text-neutral-900 truncate">{activeProfile.emergencyContact || "Not Set"}</p>
+                    <p className="text-xl font-black text-slate-800 truncate">{activeProfile.emergencyContact || "Not Set"}</p>
                   </div>
                   <div className="p-4 bg-neutral-50 rounded-2xl space-y-1">
                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Last Checkup</p>
-                    <p className="text-xl font-black text-neutral-900">12 Days Ago</p>
+                    <p className="text-xl font-black text-slate-800">12 Days Ago</p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-neutral-900">Medical Information</h3>
+                  <h3 className="text-xl font-bold text-slate-800">Medical Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-neutral-900">
+                      <div className="flex items-center gap-2 text-slate-800">
                         <Activity className="w-5 h-5" />
                         <span className="font-bold">Chronic Conditions</span>
                       </div>
@@ -160,7 +160,7 @@ export default function ProfilesPage() {
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-neutral-900">
+                      <div className="flex items-center gap-2 text-slate-800">
                         <AlertCircle className="w-5 h-5" />
                         <span className="font-bold">Allergies</span>
                       </div>
@@ -201,7 +201,7 @@ export default function ProfilesPage() {
               className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
               <div className="p-8 border-b border-neutral-100 flex items-center justify-between">
-                <h2 className="text-2xl font-black text-neutral-900 tracking-tight">New Patient Profile</h2>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">New Patient Profile</h2>
                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
                   <XCircle className="w-6 h-6 text-neutral-400" />
                 </button>
@@ -213,7 +213,7 @@ export default function ProfilesPage() {
                   <input 
                     type="text" 
                     placeholder="e.g. Mary Doe" 
-                    className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-medium"
+                    className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-medium"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
@@ -223,7 +223,7 @@ export default function ProfilesPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Relationship</label>
                     <select 
-                      className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-neutral-900 appearance-none font-medium"
+                      className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 appearance-none font-medium"
                       value={formData.relationship}
                       onChange={(e) => setFormData({...formData, relationship: e.target.value})}
                     >
@@ -235,7 +235,7 @@ export default function ProfilesPage() {
                     <input 
                       type="number" 
                       placeholder="e.g. 32"
-                      className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-medium"
+                      className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-medium"
                       value={formData.age}
                       onChange={(e) => setFormData({...formData, age: e.target.value})}
                     />
@@ -246,7 +246,7 @@ export default function ProfilesPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Blood Group</label>
                     <select 
-                      className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-neutral-900 appearance-none font-medium"
+                      className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 appearance-none font-medium"
                       value={formData.bloodGroup}
                       onChange={(e) => setFormData({...formData, bloodGroup: e.target.value})}
                     >
@@ -261,7 +261,7 @@ export default function ProfilesPage() {
                   <input 
                     type="text" 
                     placeholder="e.g. Hypertension, Diabetes..." 
-                    className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-medium"
+                    className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-medium"
                     value={formData.conditions}
                     onChange={(e) => setFormData({...formData, conditions: e.target.value})}
                   />
@@ -272,7 +272,7 @@ export default function ProfilesPage() {
                   <input 
                     type="text" 
                     placeholder="e.g. Peanuts, Penicillin..." 
-                    className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-medium"
+                    className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 transition-all font-medium"
                     value={formData.allergies}
                     onChange={(e) => setFormData({...formData, allergies: e.target.value})}
                   />
@@ -311,7 +311,7 @@ export default function ProfilesPage() {
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="flex-1 py-4 bg-neutral-900 text-white font-black text-sm rounded-2xl hover:bg-neutral-800 transition-all shadow-xl shadow-neutral-200 uppercase tracking-widest"
+                  className="flex-1 py-4 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-black text-sm rounded-2xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-xl shadow-indigo-200 uppercase tracking-widest"
                 >
                   Create Profile
                 </button>

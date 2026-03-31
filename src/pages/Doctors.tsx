@@ -39,12 +39,12 @@ export default function DoctorsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">My Doctors</h1>
-          <p className="text-neutral-500">Manage your healthcare team and contact information.</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">My Doctors</h1>
+          <p className="text-slate-500">Manage your healthcare team and contact information.</p>
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus className="w-5 h-5" />
           Add Doctor
@@ -66,12 +66,12 @@ export default function DoctorsPage() {
             </div>
 
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-20 h-20 rounded-2xl bg-neutral-50 flex items-center justify-center text-neutral-400 group-hover:bg-neutral-900 group-hover:text-white transition-all duration-500">
+              <div className="w-20 h-20 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-500">
                 <UserRound className="w-10 h-10" />
               </div>
               
               <div>
-                <h3 className="text-xl font-bold text-neutral-900">{doc.name}</h3>
+                <h3 className="text-xl font-bold text-slate-800">{doc.name}</h3>
                 <p className="text-sm font-bold text-neutral-400 uppercase tracking-widest mt-1">{doc.specialty}</p>
               </div>
 
@@ -91,11 +91,11 @@ export default function DoctorsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 w-full pt-2">
-                <button className="flex items-center justify-center gap-2 py-2.5 bg-neutral-100 text-neutral-900 rounded-xl font-bold text-xs hover:bg-neutral-200 transition-all">
+                <button className="flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-xs hover:bg-indigo-100 transition-all">
                   <MessageSquare className="w-3.5 h-3.5" />
                   Message
                 </button>
-                <button className="flex items-center justify-center gap-2 py-2.5 bg-neutral-900 text-white rounded-xl font-bold text-xs hover:bg-neutral-800 transition-all">
+                <button className="flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-bold text-xs hover:from-indigo-600 hover:to-violet-600 transition-all">
                   <Calendar className="w-3.5 h-3.5" />
                   Book Visit
                 </button>
@@ -128,7 +128,7 @@ export default function DoctorsPage() {
               className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-neutral-900">Add New Doctor</h2>
+                <h2 className="text-xl font-bold text-slate-800">Add New Doctor</h2>
                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
                   <XCircle className="w-6 h-6 text-neutral-400" />
                 </button>
@@ -140,7 +140,7 @@ export default function DoctorsPage() {
                   <input 
                     type="text" 
                     placeholder="e.g. Dr. Sarah Smith" 
-                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
@@ -152,7 +152,7 @@ export default function DoctorsPage() {
                     <input 
                       type="text" 
                       placeholder="e.g. Cardiology" 
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                       value={formData.specialty}
                       onChange={(e) => setFormData({...formData, specialty: e.target.value})}
                     />
@@ -162,7 +162,7 @@ export default function DoctorsPage() {
                     <input 
                       type="text" 
                       placeholder="e.g. City Heart Center" 
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                       value={formData.hospital}
                       onChange={(e) => setFormData({...formData, hospital: e.target.value})}
                     />
@@ -175,7 +175,7 @@ export default function DoctorsPage() {
                     <input 
                       type="tel" 
                       placeholder="+1..." 
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     />
@@ -185,7 +185,7 @@ export default function DoctorsPage() {
                     <input 
                       type="email" 
                       placeholder="doctor@example.com" 
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                     />
@@ -202,7 +202,7 @@ export default function DoctorsPage() {
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="flex-1 py-3 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200"
+                  className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
                 >
                   Save Doctor
                 </button>

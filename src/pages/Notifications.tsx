@@ -10,8 +10,8 @@ export default function NotificationsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">Notifications</h1>
-          <p className="text-neutral-500">Stay updated with your medication schedule and upcoming visits.</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Notifications</h1>
+          <p className="text-slate-500">Stay updated with your medication schedule and upcoming visits.</p>
         </div>
         <button 
           onClick={() => setIsSettingsOpen(true)}
@@ -22,10 +22,10 @@ export default function NotificationsPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-neutral-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-[2.5rem] border border-neutral-200 shadow-sm overflow-hidden">
         <div className="p-8 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
-          <h3 className="text-lg font-black text-neutral-900 tracking-tight">Recent Activity</h3>
-          <button className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] hover:text-neutral-900 transition-colors">Mark all as read</button>
+          <h3 className="text-lg font-black text-slate-800 tracking-tight">Recent Activity</h3>
+          <button className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] hover:text-indigo-600 transition-colors">Mark all as read</button>
         </div>
         
         <div className="divide-y divide-neutral-100">
@@ -39,7 +39,7 @@ export default function NotificationsPage() {
               "p-8 flex gap-6 hover:bg-neutral-50 transition-all cursor-pointer group relative",
               n.unread && "bg-neutral-50/30"
             )}>
-              {n.unread && <div className="absolute left-0 top-0 bottom-0 w-1 bg-neutral-900" />}
+              {n.unread && <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-violet-500" />}
               
               <div className={cn(
                 "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105",
@@ -52,13 +52,13 @@ export default function NotificationsPage() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <p className={cn("font-black text-neutral-900", n.unread ? "text-lg" : "text-base opacity-70")}>{n.title}</p>
+                  <p className={cn("font-black text-slate-800", n.unread ? "text-lg" : "text-base opacity-70")}>{n.title}</p>
                   <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">{n.time}</span>
                 </div>
                 <p className="text-neutral-500 font-medium leading-relaxed">{n.message}</p>
                 
                 <div className="flex gap-4 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="text-[10px] font-black text-neutral-900 uppercase tracking-widest flex items-center gap-1.5 hover:underline">
+                  <button className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5 hover:underline">
                     <Check className="w-3 h-3" /> Mark Read
                   </button>
                   <button className="text-[10px] font-black text-red-500 uppercase tracking-widest flex items-center gap-1.5 hover:underline">
@@ -89,7 +89,7 @@ export default function NotificationsPage() {
               className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
               <div className="p-8 border-b border-neutral-100 flex items-center justify-between">
-                <h2 className="text-2xl font-black text-neutral-900 tracking-tight">Notification Preferences</h2>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Notification Preferences</h2>
                 <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
                   <XCircle className="w-6 h-6 text-neutral-400" />
                 </button>
@@ -107,11 +107,11 @@ export default function NotificationsPage() {
                       <div key={i} className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                         <div className="flex items-center gap-3">
                           <pref.icon className="w-5 h-5 text-neutral-500" />
-                          <span className="font-bold text-neutral-900">{pref.label}</span>
+                          <span className="font-bold text-slate-800">{pref.label}</span>
                         </div>
                         <div className={cn(
                           "w-12 h-6 rounded-full relative cursor-pointer transition-colors",
-                          pref.enabled ? "bg-neutral-900" : "bg-neutral-200"
+                          pref.enabled ? "bg-gradient-to-r from-indigo-500 to-violet-500" : "bg-neutral-200"
                         )}>
                           <div className={cn(
                             "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
@@ -125,7 +125,7 @@ export default function NotificationsPage() {
 
                 <div className="space-y-6">
                   <h3 className="text-xs font-black text-neutral-400 uppercase tracking-[0.2em]">Quiet Hours</h3>
-                  <div className="p-6 bg-neutral-900 rounded-3xl text-white space-y-4">
+                  <div className="p-6 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-3xl text-white space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Clock className="w-5 h-5 text-neutral-400" />
@@ -145,7 +145,7 @@ export default function NotificationsPage() {
               <div className="p-8 bg-neutral-50 border-t border-neutral-100 flex gap-4">
                 <button 
                   onClick={() => setIsSettingsOpen(false)}
-                  className="flex-1 py-4 bg-neutral-900 text-white font-black text-sm rounded-2xl hover:bg-neutral-800 transition-all uppercase tracking-widest shadow-xl shadow-neutral-100"
+                  className="flex-1 py-4 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-black text-sm rounded-2xl hover:from-indigo-600 hover:to-violet-600 transition-all uppercase tracking-widest shadow-xl shadow-indigo-100"
                 >
                   Save Preferences
                 </button>
