@@ -2,15 +2,20 @@ import React, { useState } from "react";
 import { Plus, FileText, Search, Filter, Calendar, UserRound, MoreVertical, Download, Eye, Trash2, XCircle, Activity } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { useData, postData } from "@/hooks/useData";
+import { useData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
+import { authenticatedFetch } from "@/lib/apiClient";
 
 export default function ReportsPage() {
   const { activeProfileId } = usePatient();
   const { data: reports, refresh } = useData<any[]>(activeProfileId ? `/api/reports?profileId=${activeProfileId}` : null);
   const { data: doctors } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const [isUploading, setIsUploading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
+  const [showArchivedModal, setShowArchivedModal] = useState(false);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -23,11 +28,36 @@ export default function ReportsPage() {
 
   const handleSave = async () => {
     try {
-      await postData("/api/reports", {
-        ...formData,
-        profileId: activeProfileId
+      if (!activeProfileId) {
+        throw new Error("Please select a profile first.");
+      }
+
+      const payload = new FormData();
+      payload.append("title", formData.title);
+      payload.append("date", formData.date);
+      payload.append("type", formData.type);
+      payload.append("doctorId", formData.doctorId);
+      payload.append("result", formData.result);
+      payload.append("status", formData.status);
+      payload.append("profileId", activeProfileId);
+      if (selectedFile) {
+        payload.append("file", selectedFile);
+      }
+
+      const response = await authenticatedFetch(editingId ? `/api/reports/${editingId}` : "/api/reports", {
+        method: editingId ? "PUT" : "POST",
+        body: payload,
       });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || "Failed to save report");
+      }
+
       setIsUploading(false);
+      setEditingId(null);
+      setSelectedFile(null);
+      setError("");
       refresh();
       setFormData({
         title: "",
@@ -39,13 +69,71 @@ export default function ReportsPage() {
       });
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to upload report.");
     }
+  };
+
+  const handleEdit = (report: any) => {
+    setError("");
+    setEditingId(report.id);
+    setFormData({
+      title: report.title || "",
+      date: report.date ? new Date(report.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      type: report.type || "Lab Report",
+      doctorId: report.doctorId || "",
+      result: report.result || "",
+      status: report.status || "completed",
+    });
+    setSelectedFile(null);
+    setIsUploading(true);
+  };
+
+  const handleArchive = async (report: any) => {
+    try {
+      const payload = new FormData();
+      payload.append("status", report.status === "archived" ? "completed" : "archived");
+
+      const response = await authenticatedFetch(`/api/reports/${report.id}`, {
+        method: "PUT",
+        body: payload,
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || "Failed to update report status");
+      }
+
+      await refresh();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to archive report.");
+    }
+  };
+
+  const resetModal = () => {
+    setIsUploading(false);
+    setEditingId(null);
+    setSelectedFile(null);
+    setError("");
+    setFormData({
+      title: "",
+      date: new Date().toISOString().split('T')[0],
+      type: "Lab Report",
+      doctorId: "",
+      result: "",
+      status: "completed"
+    });
   };
 
   const filteredReports = reports?.filter(report => 
     report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     report.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const activeReports = filteredReports?.filter((report) => report.status !== "archived") || [];
+  const archivedReports = filteredReports?.filter((report) => report.status === "archived") || [];
+
+  const getReportFileUrl = (report: any) => report.signedFileUrl || report.fileUrl;
 
   return (
     <div className="space-y-8">
@@ -55,11 +143,21 @@ export default function ReportsPage() {
           <p className="text-slate-500">Upload and organize your medical test results and lab reports.</p>
         </div>
         <button 
-          onClick={() => setIsUploading(true)}
+          onClick={() => {
+            resetModal();
+            setIsUploading(true);
+          }}
           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus className="w-5 h-5" />
           Upload Report
+        </button>
+        <button
+          onClick={() => setShowArchivedModal(true)}
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-50 transition-all shadow-sm"
+        >
+          <ArchiveIcon />
+          Archived Reports
         </button>
       </div>
 
@@ -82,7 +180,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredReports?.map((report, idx) => (
+        {activeReports?.map((report, idx) => (
           <motion.div 
             key={report.id || idx}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -93,11 +191,32 @@ export default function ReportsPage() {
               <FileText className="w-12 h-12 text-neutral-300 group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <div className="flex gap-2">
-                  <button className="p-2 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform">
-                    <Eye className="w-5 h-5" />
-                  </button>
-                  <button className="p-2 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform">
-                    <Download className="w-5 h-5" />
+                  {getReportFileUrl(report) && (
+                    <a
+                      href={getReportFileUrl(report)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </a>
+                  )}
+                  {getReportFileUrl(report) && (
+                    <a
+                      href={getReportFileUrl(report)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
+                    >
+                      <Download className="w-5 h-5" />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => handleEdit(report)}
+                    className="p-2 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
+                    type="button"
+                  >
+                    <MoreVertical className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -109,8 +228,11 @@ export default function ReportsPage() {
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <h3 className="font-bold text-slate-800 text-lg leading-tight">{report.title}</h3>
-                <button className="p-1 hover:bg-neutral-100 rounded-lg transition-colors">
-                  <MoreVertical className="w-4 h-4 text-neutral-400" />
+                <button
+                  onClick={() => handleArchive(report)}
+                  className="p-1 px-2 hover:bg-neutral-100 rounded-lg transition-colors text-xs font-bold text-neutral-500"
+                >
+                  {report.status === "archived" ? "Unarchive" : "Archive"}
                 </button>
               </div>
 
@@ -125,6 +247,20 @@ export default function ReportsPage() {
                     <span>Result: {report.result}</span>
                   </div>
                 )}
+                {report.doctor?.name && (
+                  <div className="flex items-center gap-2 text-xs text-neutral-500 font-medium">
+                    <UserRound className="w-3.5 h-3.5" />
+                    <span>Doctor: {report.doctor.name}</span>
+                  </div>
+                )}
+                {report.fileName && (
+                  <div className="text-xs text-neutral-500 font-medium">
+                    File: {report.fileName}
+                  </div>
+                )}
+                <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                  Status: {report.status}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -135,6 +271,75 @@ export default function ReportsPage() {
           </div>
         )}
       </div>
+
+      {/* Archived Reports Modal */}
+      <AnimatePresence>
+        {showArchivedModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowArchivedModal(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-800">Archived Reports</h2>
+                <button onClick={() => setShowArchivedModal(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+                  <XCircle className="w-6 h-6 text-neutral-400" />
+                </button>
+              </div>
+
+              <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
+                {archivedReports.length > 0 ? (
+                  archivedReports.map((report) => (
+                    <div key={report.id} className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <h3 className="font-bold text-slate-800">{report.title}</h3>
+                        <p className="text-sm text-neutral-500">{formatDate(report.date)} • {report.type}</p>
+                        {report.doctor?.name && (
+                          <p className="text-xs text-neutral-500">Doctor: {report.doctor.name}</p>
+                        )}
+                        {report.fileName && (
+                          <p className="text-xs text-neutral-500">File: {report.fileName}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        {getReportFileUrl(report) && (
+                          <a
+                            href={getReportFileUrl(report)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 bg-white rounded-full text-indigo-600 shadow hover:scale-105 transition-transform"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleArchive(report)}
+                          className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all"
+                        >
+                          Unarchive
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-12 bg-neutral-50 rounded-3xl border-2 border-dashed border-neutral-200 text-center">
+                    <p className="text-neutral-500 italic">No archived reports found.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Upload Modal */}
       <AnimatePresence>
@@ -154,22 +359,35 @@ export default function ReportsPage() {
               className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-800">Upload Test Report</h2>
-                <button onClick={() => setIsUploading(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+                <h2 className="text-xl font-bold text-slate-800">{editingId ? "Edit Test Report" : "Upload Test Report"}</h2>
+                <button onClick={resetModal} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
                   <XCircle className="w-6 h-6 text-neutral-400" />
                 </button>
               </div>
               
               <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                <div className="border-2 border-dashed border-neutral-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center gap-4 hover:border-indigo-400 transition-colors cursor-pointer group">
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
+                    {error}
+                  </div>
+                )}
+
+                <label className="border-2 border-dashed border-neutral-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center gap-4 hover:border-indigo-400 transition-colors cursor-pointer group">
                   <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all">
                     <Plus className="w-8 h-8" />
                   </div>
                   <div>
                     <p className="font-bold text-slate-800">Click to select or drag and drop</p>
                     <p className="text-xs text-neutral-500 mt-1">JPEG, PNG or PDF (Max 10MB)</p>
+                    {selectedFile && <p className="text-xs text-indigo-600 mt-2">Selected: {selectedFile.name}</p>}
                   </div>
-                </div>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    className="hidden"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  />
+                </label>
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Report Name</label>
@@ -208,6 +426,20 @@ export default function ReportsPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Doctor (Optional)</label>
+                  <select 
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-300 appearance-none"
+                    value={formData.doctorId}
+                    onChange={(e) => setFormData({...formData, doctorId: e.target.value})}
+                  >
+                    <option value="">Select doctor...</option>
+                    {doctors?.map((doctor) => (
+                      <option key={doctor.id} value={doctor.id}>{doctor.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Result Summary (Optional)</label>
                   <input 
                     type="text" 
@@ -221,7 +453,7 @@ export default function ReportsPage() {
 
               <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex gap-3">
                 <button 
-                  onClick={() => setIsUploading(false)}
+                  onClick={resetModal}
                   className="flex-1 py-3 text-neutral-600 font-bold hover:bg-neutral-100 rounded-xl transition-all"
                 >
                   Cancel
@@ -230,7 +462,7 @@ export default function ReportsPage() {
                   onClick={handleSave}
                   className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
                 >
-                  Save Report
+                  {editingId ? "Update Report" : "Save Report"}
                 </button>
               </div>
             </motion.div>
@@ -238,5 +470,15 @@ export default function ReportsPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function ArchiveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <path d="M5 8h14v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z" />
+      <path d="M10 12h4" />
+    </svg>
   );
 }

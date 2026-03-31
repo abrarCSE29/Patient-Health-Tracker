@@ -2,10 +2,12 @@ import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
+import multer from "multer";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./src/lib/db.js";
+import { uploadBufferToBlob } from "./src/lib/blob.js";
 import {
   clearRefreshCookie,
   getRefreshTokenFromRequest,
@@ -16,6 +18,19 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from "./src/lib
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const azureBlobSignature = process.env.AZURE_BLOB_SIGNATURE?.trim();
+
+function appendBlobSignature(url?: string | null) {
+  if (!url) return url;
+  if (!azureBlobSignature) return url;
+
+  const separator = url.includes("?") ? "&" : "?";
+  const normalizedSignature = azureBlobSignature.startsWith("?") || azureBlobSignature.startsWith("&")
+    ? azureBlobSignature.slice(1)
+    : azureBlobSignature;
+
+  return `${url}${separator}${normalizedSignature}`;
+}
 
 function isPublicApiRoute(pathname: string, method: string) {
   if (pathname === "/health") return true;
@@ -43,6 +58,10 @@ async function userOwnsDoctor(userId: string, doctorId: string) {
 async function startServer() {
   const app = express();
   const PORT = 3000;
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+  });
 
   app.use(cookieParser());
   app.use(express.json());
@@ -686,15 +705,20 @@ async function startServer() {
         where: profileId
           ? { profileId: String(profileId) }
           : { profile: { userId: authUser.userId } },
-        include: { profile: true },
+        include: { profile: true, doctor: true },
       });
-      res.json(reports);
+      res.json(
+        reports.map((report) => ({
+          ...report,
+          signedFileUrl: appendBlobSignature(report.fileUrl),
+        }))
+      );
     } catch {
       res.status(500).json({ error: "Failed to fetch reports" });
     }
   });
 
-  app.post("/api/reports", async (req, res) => {
+  app.post("/api/reports", upload.single("file"), async (req, res) => {
     try {
       const authUser = requireRequestUser(req, res);
       if (!authUser) return;
@@ -708,6 +732,32 @@ async function startServer() {
         if (!ownsDoctor) return res.status(403).json({ error: "Forbidden" });
       }
 
+      let fileUploadData: {
+        fileUrl?: string;
+        blobName?: string;
+        fileName?: string;
+        contentType?: string;
+        fileSize?: number;
+      } = {};
+
+      if (req.file) {
+        const safeFileName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const blobName = `${profileId}/${Date.now()}-${safeFileName}`;
+        const uploadResult = await uploadBufferToBlob({
+          buffer: req.file.buffer,
+          blobName,
+          contentType: req.file.mimetype,
+        });
+
+        fileUploadData = {
+          fileUrl: uploadResult.url,
+          blobName: uploadResult.blobName,
+          fileName: req.file.originalname,
+          contentType: req.file.mimetype,
+          fileSize: req.file.size,
+        };
+      }
+
       const newReport = await db.report.create({
         data: {
           title,
@@ -717,12 +767,91 @@ async function startServer() {
           status: status || "completed",
           doctorId,
           profileId,
+          ...fileUploadData,
         },
       });
-      res.status(201).json(newReport);
+      res.status(201).json({
+        ...newReport,
+        signedFileUrl: appendBlobSignature(newReport.fileUrl),
+      });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Failed to create report" });
+    }
+  });
+
+  app.put("/api/reports/:id", upload.single("file"), async (req, res) => {
+    try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const { id } = req.params;
+      const existingReport = await db.report.findFirst({
+        where: {
+          id,
+          profile: { userId: authUser.userId },
+        },
+        include: { profile: true },
+      });
+
+      if (!existingReport) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+
+      const { title, date, type, result, status, doctorId } = req.body;
+
+      if (doctorId) {
+        const ownsDoctor = await userOwnsDoctor(authUser.userId, String(doctorId));
+        if (!ownsDoctor) return res.status(403).json({ error: "Forbidden" });
+      }
+
+      let fileUploadData: {
+        fileUrl?: string;
+        blobName?: string;
+        fileName?: string;
+        contentType?: string;
+        fileSize?: number;
+      } = {};
+
+      if (req.file) {
+        const safeFileName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const blobName = `${existingReport.profileId}/${Date.now()}-${safeFileName}`;
+        const uploadResult = await uploadBufferToBlob({
+          buffer: req.file.buffer,
+          blobName,
+          contentType: req.file.mimetype,
+        });
+
+        fileUploadData = {
+          fileUrl: uploadResult.url,
+          blobName: uploadResult.blobName,
+          fileName: req.file.originalname,
+          contentType: req.file.mimetype,
+          fileSize: req.file.size,
+        };
+      }
+
+      const updatedReport = await db.report.update({
+        where: { id },
+        data: {
+          title: title ?? undefined,
+          date: date ?? undefined,
+          type: type ?? undefined,
+          result: result ?? undefined,
+          status: status ?? undefined,
+          doctorId: doctorId === "" ? null : (doctorId ?? undefined),
+          ...fileUploadData,
+        },
+        include: { doctor: true, profile: true },
+      });
+
+      res.json({
+        ...updatedReport,
+        signedFileUrl: appendBlobSignature(updatedReport.fileUrl),
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to update report" });
     }
   });
 
