@@ -4,11 +4,13 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useData, postData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
+import { authenticatedFetch } from "@/lib/apiClient";
 
 export default function DoctorsPage() {
   const { activeProfileId, activeProfile } = usePatient();
   const { data: doctors, refresh } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   
   const [formData, setFormData] = useState({
@@ -28,8 +30,25 @@ export default function DoctorsPage() {
 
     try {
       setError("");
-      await postData("/api/doctors", { ...formData, profileId: activeProfileId });
+      if (editingId) {
+        const response = await authenticatedFetch(`/api/doctors/${editingId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          const result = await response.json().catch(() => null);
+          throw new Error(result?.error || "Failed to update doctor.");
+        }
+      } else {
+        await postData("/api/doctors", { ...formData, profileId: activeProfileId });
+      }
+
       setIsAdding(false);
+      setEditingId(null);
       refresh();
       setFormData({
         name: "",
@@ -43,6 +62,34 @@ export default function DoctorsPage() {
       console.error(err);
       setError(err instanceof Error ? err.message : "Failed to save doctor.");
     }
+  };
+
+  const handleEdit = (doctor: any) => {
+    setError("");
+    setEditingId(doctor.id);
+    setFormData({
+      name: doctor.name || "",
+      specialty: doctor.specialty || "",
+      hospital: doctor.hospital || "",
+      phone: doctor.phone || "",
+      email: doctor.email || "",
+      address: doctor.address || "",
+    });
+    setIsAdding(true);
+  };
+
+  const resetModal = () => {
+    setIsAdding(false);
+    setEditingId(null);
+    setError("");
+    setFormData({
+      name: "",
+      specialty: "",
+      hospital: "",
+      phone: "",
+      email: "",
+      address: "",
+    });
   };
 
   return (
@@ -83,7 +130,11 @@ export default function DoctorsPage() {
             className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-sm hover:shadow-xl transition-all relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 p-4">
-              <button className="p-2 hover:bg-neutral-100 rounded-xl transition-colors">
+              <button
+                onClick={() => handleEdit(doc)}
+                className="p-2 hover:bg-neutral-100 rounded-xl transition-colors"
+                title="Edit doctor"
+              >
                 <MoreVertical className="w-5 h-5 text-neutral-400" />
               </button>
             </div>
@@ -151,8 +202,8 @@ export default function DoctorsPage() {
               className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-800">Add New Doctor</h2>
-                <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+                <h2 className="text-xl font-bold text-slate-800">{editingId ? "Update Doctor" : "Add New Doctor"}</h2>
+                <button onClick={resetModal} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
                   <XCircle className="w-6 h-6 text-neutral-400" />
                 </button>
               </div>
@@ -218,7 +269,7 @@ export default function DoctorsPage() {
 
               <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex gap-3">
                 <button 
-                  onClick={() => setIsAdding(false)}
+                  onClick={resetModal}
                   className="flex-1 py-3 text-neutral-600 font-bold hover:bg-neutral-100 rounded-xl transition-all"
                 >
                   Cancel
@@ -227,7 +278,7 @@ export default function DoctorsPage() {
                   onClick={handleSave}
                   className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
                 >
-                  Save Doctor
+                  {editingId ? "Update Doctor" : "Save Doctor"}
                 </button>
               </div>
             </motion.div>

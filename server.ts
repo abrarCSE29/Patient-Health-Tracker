@@ -387,6 +387,46 @@ async function startServer() {
     }
   });
 
+  app.put("/api/doctors/:id", async (req, res) => {
+    try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const { id } = req.params;
+      const currentDoctor = await db.doctor.findUnique({
+        where: { id },
+        include: { profile: true },
+      });
+
+      if (!currentDoctor) {
+        return res.status(404).json({ error: "Doctor not found" });
+      }
+
+      if (currentDoctor.profile.userId !== authUser.userId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const { name, specialty, hospital, phone, email, address } = req.body;
+
+      const updatedDoctor = await db.doctor.update({
+        where: { id },
+        data: {
+          name,
+          specialty,
+          hospital,
+          phone,
+          email,
+          address,
+        },
+      });
+
+      res.json(updatedDoctor);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to update doctor" });
+    }
+  });
+
   // Visits API
   app.get("/api/visits", async (req, res) => {
     try {
