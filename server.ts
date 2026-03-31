@@ -595,6 +595,81 @@ async function startServer() {
     }
   });
 
+  app.put("/api/profiles/:id", async (req, res) => {
+    try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const { id } = req.params;
+      const currentProfile = await db.profile.findFirst({ where: { id, userId: authUser.userId } });
+      if (!currentProfile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      const {
+        name,
+        age,
+        gender,
+        bloodGroup,
+        height,
+        weight,
+        relationship,
+        conditions,
+        allergies,
+        emergencyContact,
+        emergencyPhone,
+      } = req.body;
+
+      const updatedProfile = await db.profile.update({
+        where: { id },
+        data: {
+          name,
+          age: age !== undefined ? parseInt(age) || 0 : undefined,
+          gender,
+          bloodGroup,
+          height,
+          weight,
+          relationship,
+          conditions,
+          allergies,
+          emergencyContact,
+          emergencyPhone,
+        },
+      });
+
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  app.delete("/api/profiles/:id", async (req, res) => {
+    try {
+      const authUser = requireRequestUser(req, res);
+      if (!authUser) return;
+
+      const { id } = req.params;
+      const currentProfile = await db.profile.findFirst({ where: { id, userId: authUser.userId } });
+      if (!currentProfile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      await db.$transaction([
+        db.report.deleteMany({ where: { profileId: id } }),
+        db.visit.deleteMany({ where: { profileId: id } }),
+        db.medication.deleteMany({ where: { profileId: id } }),
+        db.doctor.deleteMany({ where: { profileId: id } }),
+        db.profile.delete({ where: { id } }),
+      ]);
+
+      res.json({ message: "Profile deleted successfully" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to delete profile" });
+    }
+  });
+
   // Reports API
   app.get("/api/reports", async (req, res) => {
     try {
