@@ -16,9 +16,14 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-    },
+  hmr: process.env.DISABLE_HMR !== 'true',
+  allowedHosts: [
+    'patient-health-tracker.abrarhameem.me',
+    '.abrarhameem.me', // Allows all subdomains
+    'localhost',
+    '127.0.0.1'
+  ],
+}
+,
   };
 });
