@@ -147,7 +147,7 @@ export default function ReportsPage() {
             resetModal();
             setIsUploading(true);
           }}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-linear-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus className="w-5 h-5" />
           Upload Report
@@ -460,7 +460,7 @@ export default function ReportsPage() {
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
+                  className="flex-1 py-3 bg-linear-to-r from-indigo-500 to-violet-500 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
                 >
                   {editingId ? "Update Report" : "Save Report"}
                 </button>

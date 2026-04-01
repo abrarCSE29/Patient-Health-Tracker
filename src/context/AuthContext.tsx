@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { authenticatedFetch, setAccessToken, setRefreshHandler } from "@/lib/apiClient";
 
 interface User {
@@ -17,10 +17,12 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshSession = async (): Promise<string | null> => {
     try {
@@ -94,14 +96,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(result.user);
   };
 
-  const logout = async () => {
-    await authenticatedFetch("/api/auth/logout", { method: "POST" });
+  const resetInactivityTimer = useCallback(() => {
+    if (!user) {
+      return;
+    }
+
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+
+    inactivityTimerRef.current = setTimeout(async () => {
+      setAccessToken(null);
+      setUser(null);
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {
+        // ignore
+      }
+    }, INACTIVITY_TIMEOUT_MS);
+  }, [user]);
+
+  const logout = useCallback(async () => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    try {
+      await authenticatedFetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore logout errors if the session is already gone
+    }
     setAccessToken(null);
     setUser(null);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      return;
+    }
+
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"] as const;
+    const onActivity = () => resetInactivityTimer();
+
+    events.forEach((event) => {
+      window.addEventListener(event, onActivity);
+    });
+
+    resetInactivityTimer();
+
+    return () => {
+      events.forEach((event) => {
+        window.removeEventListener(event, onActivity);
+      });
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    };
+  }, [user, resetInactivityTimer]);
 
   if (loading) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   return (

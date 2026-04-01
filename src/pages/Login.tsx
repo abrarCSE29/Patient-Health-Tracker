@@ -176,14 +176,6 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-12 flex items-center justify-center gap-8 opacity-40">
-          <div className="flex items-center gap-2 grayscale">
-            <ShieldCheck className="w-5 h-5" />
-            <span className="text-[10px] font-black uppercase tracking-widest">HIPAA Compliant</span>
-          </div>
-          <div className="flex items-center gap-2 grayscale">
-            <Lock className="w-5 h-5" />
-            <span className="text-[10px] font-black uppercase tracking-widest">256-bit SSL</span>
-          </div>
         </div>
       </motion.div>
     </div>
