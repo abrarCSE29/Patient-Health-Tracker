@@ -4,16 +4,19 @@ import { cn, formatDate, formatTime } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useData, postData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
-import { authenticatedFetch } from "@/lib/apiClient";
+import { authenticatedFetch, getResponseErrorMessage } from "@/lib/apiClient";
 
 export default function VisitsPage() {
   const { activeProfileId } = usePatient();
-  const { data: visits, refresh } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
-  const { data: doctors } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
+  const { data: visits, refresh, error: visitsLoadError } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
+  const { data: doctors, error: doctorsLoadError } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const [isScheduling, setIsScheduling] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
+  const [error, setError] = useState("");
+  const dataError = visitsLoadError?.message || doctorsLoadError?.message || "";
+  const visibleError = error || dataError;
   
   const [formData, setFormData] = useState({
     doctorId: "",
@@ -35,12 +38,18 @@ export default function VisitsPage() {
     });
     setEditingId(null);
     setIsScheduling(false);
+    setError("");
   };
 
   const handleSave = async () => {
     try {
+      if (!activeProfileId) {
+        throw new Error("Please create or select a patient profile first.");
+      }
+
+      setError("");
       if (editingId) {
-        await authenticatedFetch(`/api/visits/${editingId}`, {
+        const response = await authenticatedFetch(`/api/visits/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -48,6 +57,11 @@ export default function VisitsPage() {
             status: activeTab === "upcoming" ? "upcoming" : "completed"
           })
         });
+
+        if (!response.ok) {
+          const message = await getResponseErrorMessage(response, "Failed to update visit");
+          throw new Error(message);
+        }
       } else {
         await postData("/api/visits", {
           ...formData,
@@ -59,6 +73,7 @@ export default function VisitsPage() {
       refresh();
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to save visit.");
     }
   };
 
@@ -78,26 +93,38 @@ export default function VisitsPage() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await authenticatedFetch(`/api/visits/${deleteId}`, {
+      const response = await authenticatedFetch(`/api/visits/${deleteId}`, {
         method: "DELETE"
       });
+      if (!response.ok) {
+        const message = await getResponseErrorMessage(response, "Failed to delete visit");
+        throw new Error(message);
+      }
       setDeleteId(null);
+      setError("");
       refresh();
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to delete visit.");
     }
   };
 
   const handleStatusUpdate = async (id: string, status: string) => {
     try {
-      await authenticatedFetch(`/api/visits/${id}`, {
+      const response = await authenticatedFetch(`/api/visits/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
       });
+      if (!response.ok) {
+        const message = await getResponseErrorMessage(response, "Failed to update visit status");
+        throw new Error(message);
+      }
+      setError("");
       refresh();
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to update visit status.");
     }
   };
 
@@ -114,12 +141,18 @@ export default function VisitsPage() {
         </div>
         <button 
           onClick={() => setIsScheduling(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
+          className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus className="w-5 h-5" />
           Schedule Visit
         </button>
       </div>
+
+      {visibleError && (
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
+          {visibleError}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex p-1 bg-neutral-100 rounded-2xl w-fit">
@@ -259,7 +292,7 @@ export default function VisitsPage() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Date</label>
                     <input 
@@ -302,7 +335,7 @@ export default function VisitsPage() {
                 </div>
               </div>
 
-              <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex gap-3">
+              <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex flex-col-reverse sm:flex-row gap-3">
                 <button 
                   onClick={resetForm}
                   className="flex-1 py-3 text-neutral-600 font-bold hover:bg-neutral-100 rounded-xl transition-all"

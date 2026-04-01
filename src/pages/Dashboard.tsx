@@ -6,29 +6,23 @@ import {
   FileText, 
   ChevronRight, 
   Clock, 
-  CheckCircle2, 
   AlertCircle,
   Activity,
   UserRound,
-  ArrowUpRight,
   Bell,
-  Search,
-  Stethoscope,
-  ArrowRight,
-  ChevronDown,
-  Users
+  ArrowRight
 } from "lucide-react";
 import { cn, formatDate, formatTime } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { useData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
 
 export default function Dashboard() {
-  const { activeProfileId, activeProfile, profiles, setActiveProfileId } = usePatient();
-  const [isProfileOpen, setIsProfileOpen] = React.useState(false);
-  const { data: meds } = useData<any[]>(activeProfileId ? `/api/medications?profileId=${activeProfileId}` : null);
-  const { data: visits } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
+  const { activeProfileId, activeProfile } = usePatient();
+  const { data: meds, error: medsError } = useData<any[]>(activeProfileId ? `/api/medications?profileId=${activeProfileId}` : null);
+  const { data: visits, error: visitsError } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
+  const dataError = medsError?.message || visitsError?.message || "";
 
   const upcomingVisits = visits?.filter(v => v.status === 'upcoming' && new Date(v.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) || [];
   const activeMedsList = meds?.filter(m => m.status === 'active') || [];
@@ -40,6 +34,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 pb-12">
+      {dataError && (
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
+          {dataError}
+        </div>
+      )}
+
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
@@ -51,99 +51,19 @@ export default function Dashboard() {
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex w-full md:w-auto items-center justify-end gap-3">
           <div className="relative">
             <button className="p-3 bg-white/90 border border-indigo-100 rounded-2xl hover:bg-white transition-all shadow-sm shadow-indigo-100/60 relative">
               <Bell className="w-6 h-6 text-indigo-500" />
               <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
             </button>
           </div>
-          
-          <div className="relative">
-            <button 
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-3 pl-3 border-l border-slate-200 hover:opacity-90 transition-all group"
-            >
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-black text-slate-800 flex items-center justify-end gap-1">
-                  {activeProfile?.name || "User"}
-                  <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isProfileOpen && "rotate-180")} />
-                </p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{activeProfile?.relationship || "Self"}</p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-200 group-hover:scale-105 transition-transform">
-                <UserRound className="w-6 h-6" />
-              </div>
-            </button>
-
-            <AnimatePresence>
-              {isProfileOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={() => setIsProfileOpen(false)} 
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-64 bg-white/95 rounded-[2rem] border border-slate-200 shadow-2xl shadow-slate-200/60 z-20 overflow-hidden p-2"
-                  >
-                    <div className="px-4 py-3 border-b border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Switch Profile</p>
-                    </div>
-                    <div className="max-h-[300px] overflow-y-auto py-2">
-                      {profiles.map((profile) => (
-                        <button
-                          key={profile.id}
-                          onClick={() => {
-                            setActiveProfileId(profile.id);
-                            setIsProfileOpen(false);
-                          }}
-                          className={cn(
-                            "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-left group",
-                            activeProfileId === profile.id 
-                              ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white" 
-                              : "hover:bg-slate-50 text-slate-600"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
-                            activeProfileId === profile.id 
-                              ? "bg-white/10 text-white" 
-                              : "bg-slate-100 text-slate-400 group-hover:bg-indigo-500 group-hover:text-white"
-                          )}>
-                            <UserRound className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="font-black text-sm">{profile.name}</p>
-                            <p className={cn(
-                              "text-[10px] font-bold uppercase tracking-wider",
-                              activeProfileId === profile.id ? "text-white/70" : "text-slate-400"
-                            )}>
-                              {profile.relationship}
-                            </p>
-                          </div>
-                          {activeProfileId === profile.id && (
-                            <CheckCircle2 className="w-4 h-4 ml-auto text-emerald-400" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="p-2 border-t border-slate-100">
-                      <Link 
-                        to="/profiles"
-                        className="flex items-center justify-center gap-2 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors"
-                      >
-                        <Users className="w-4 h-4" />
-                        Manage Profiles
-                      </Link>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+          <Link
+            to="/profiles"
+            className="px-4 py-3 bg-white/90 border border-indigo-100 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 hover:bg-white transition-all shadow-sm shadow-indigo-100/60"
+          >
+            Manage Profiles
+          </Link>
         </div>
       </div>
 

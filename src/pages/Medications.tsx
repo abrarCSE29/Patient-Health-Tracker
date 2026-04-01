@@ -8,13 +8,13 @@ import { MedicationRosterPDF } from "@/components/MedicationRosterPDF";
 
 import { useData, postData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
-import { authenticatedFetch } from "@/lib/apiClient";
+import { authenticatedFetch, getResponseErrorMessage } from "@/lib/apiClient";
 
 export default function MedicationsPage() {
   const { activeProfileId, activeProfile } = usePatient();
-  const { data: meds, refresh } = useData<any[]>(activeProfileId ? `/api/medications?profileId=${activeProfileId}` : null);
-  const { data: doctors } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
-  const { data: visits } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
+  const { data: meds, refresh, error: medsLoadError } = useData<any[]>(activeProfileId ? `/api/medications?profileId=${activeProfileId}` : null);
+  const { data: doctors, error: doctorsLoadError } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
+  const { data: visits, error: visitsLoadError } = useData<any[]>(activeProfileId ? `/api/visits?profileId=${activeProfileId}` : null);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -22,6 +22,8 @@ export default function MedicationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState("");
+  const dataError = medsLoadError?.message || doctorsLoadError?.message || visitsLoadError?.message || "";
+  const visibleError = error || dataError;
   const [activeTimeSlots, setActiveTimeSlots] = useState<{
     morning: boolean;
     afternoon: boolean;
@@ -60,9 +62,13 @@ export default function MedicationsPage() {
     }
 
     try {
+      if (!activeProfileId) {
+        throw new Error("Please create or select a patient profile first.");
+      }
+
       setError("");
       if (editingId) {
-        await authenticatedFetch(`/api/medications/${editingId}`, {
+        const response = await authenticatedFetch(`/api/medications/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -70,6 +76,11 @@ export default function MedicationsPage() {
             profileId: activeProfileId
           })
         });
+
+        if (!response.ok) {
+          const message = await getResponseErrorMessage(response, "Failed to update medication");
+          throw new Error(message);
+        }
       } else {
         await postData("/api/medications", {
           ...formData,
@@ -139,32 +150,44 @@ export default function MedicationsPage() {
     if (!deleteId) return;
     
     try {
-      await authenticatedFetch(`/api/medications/${deleteId}`, {
+      const response = await authenticatedFetch(`/api/medications/${deleteId}`, {
         method: "DELETE"
       });
+      if (!response.ok) {
+        const message = await getResponseErrorMessage(response, "Failed to delete medication");
+        throw new Error(message);
+      }
       setDeleteId(null);
+      setError("");
       refresh();
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to delete medication.");
     }
   };
 
   const handleStatusUpdate = async (id: string, status: string) => {
     try {
-      await authenticatedFetch(`/api/medications/${id}`, {
+      const response = await authenticatedFetch(`/api/medications/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
       });
+      if (!response.ok) {
+        const message = await getResponseErrorMessage(response, "Failed to update medication status");
+        throw new Error(message);
+      }
+      setError("");
       refresh();
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to update medication status.");
     }
   };
 
   const handleExportPDF = async () => {
     if (!meds || meds.length === 0) {
-      alert("No medications to export");
+      setError("No medications to export.");
       return;
     }
 
@@ -187,7 +210,7 @@ export default function MedicationsPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Error generating PDF:", err);
-      alert("Error generating PDF. Please try again.");
+      setError("Error generating PDF. Please try again.");
     }
   };
 
@@ -203,23 +226,32 @@ export default function MedicationsPage() {
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Medications</h1>
           <p className="text-slate-500">Manage your prescriptions and daily schedules.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3">
           <button 
             onClick={handleExportPDF}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-50 transition-all shadow-sm"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-50 transition-all shadow-sm"
           >
             <Download className="w-5 h-5" />
             Export PDF
           </button>
           <button 
-            onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
+            onClick={() => {
+              setError("");
+              setIsAdding(true);
+            }}
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
           >
             <Plus className="w-5 h-5" />
             Add Medication
           </button>
         </div>
       </div>
+
+      {visibleError && (
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
+          {visibleError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Active Medications List */}
@@ -538,7 +570,7 @@ export default function MedicationsPage() {
                   
                   {/* Morning */}
                   {activeTimeSlots.morning && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-neutral-500 uppercase">Morning Pills (Qty)</label>
                         <input 
@@ -566,7 +598,7 @@ export default function MedicationsPage() {
 
                   {/* Afternoon */}
                   {activeTimeSlots.afternoon && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-neutral-500 uppercase">Afternoon Pills (Qty)</label>
                         <input 
@@ -594,7 +626,7 @@ export default function MedicationsPage() {
 
                   {/* Night */}
                   {activeTimeSlots.night && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-neutral-500 uppercase">Night Pills (Qty)</label>
                         <input 
@@ -621,7 +653,7 @@ export default function MedicationsPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Start Date</label>
                     <input 
@@ -670,7 +702,7 @@ export default function MedicationsPage() {
                 </div>
               </div>
 
-              <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex gap-3">
+              <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex flex-col-reverse sm:flex-row gap-3">
                 <button 
                   onClick={() => {
                     setIsAdding(false);

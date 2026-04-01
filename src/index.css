@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+:root {
+  font-size: clamp(14px, 0.35vw + 13px, 17px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  line-height: 1.5;
+}

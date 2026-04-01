@@ -1,21 +1,23 @@
 import React, { useState } from "react";
-import { Plus, FileText, Search, Filter, Calendar, UserRound, MoreVertical, Download, Eye, Trash2, XCircle, Activity } from "lucide-react";
-import { cn, formatDate } from "@/lib/utils";
+import { Plus, FileText, Search, Filter, Calendar, UserRound, MoreVertical, Download, Eye, XCircle, Activity } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useData } from "@/hooks/useData";
 import { usePatient } from "@/context/PatientContext";
-import { authenticatedFetch } from "@/lib/apiClient";
+import { authenticatedFetch, getResponseErrorMessage } from "@/lib/apiClient";
 
 export default function ReportsPage() {
   const { activeProfileId } = usePatient();
-  const { data: reports, refresh } = useData<any[]>(activeProfileId ? `/api/reports?profileId=${activeProfileId}` : null);
-  const { data: doctors } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
+  const { data: reports, refresh, error: reportsError } = useData<any[]>(activeProfileId ? `/api/reports?profileId=${activeProfileId}` : null);
+  const { data: doctors, error: doctorsError } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const [isUploading, setIsUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [showArchivedModal, setShowArchivedModal] = useState(false);
+  const dataError = reportsError?.message || doctorsError?.message || "";
+  const visibleError = error || dataError;
   
   const [formData, setFormData] = useState({
     title: "",
@@ -50,8 +52,8 @@ export default function ReportsPage() {
       });
 
       if (!response.ok) {
-        const result = await response.json().catch(() => null);
-        throw new Error(result?.error || "Failed to save report");
+        const message = await getResponseErrorMessage(response, "Failed to save report");
+        throw new Error(message);
       }
 
       setIsUploading(false);
@@ -99,8 +101,8 @@ export default function ReportsPage() {
       });
 
       if (!response.ok) {
-        const result = await response.json().catch(() => null);
-        throw new Error(result?.error || "Failed to update report status");
+        const message = await getResponseErrorMessage(response, "Failed to update report status");
+        throw new Error(message);
       }
 
       await refresh();
@@ -142,24 +144,32 @@ export default function ReportsPage() {
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Test Reports</h1>
           <p className="text-slate-500">Upload and organize your medical test results and lab reports.</p>
         </div>
-        <button 
-          onClick={() => {
-            resetModal();
-            setIsUploading(true);
-          }}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-linear-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
-        >
-          <Plus className="w-5 h-5" />
-          Upload Report
-        </button>
-        <button
-          onClick={() => setShowArchivedModal(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-50 transition-all shadow-sm"
-        >
-          <ArchiveIcon />
-          Archived Reports
-        </button>
+        <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3">
+          <button 
+            onClick={() => {
+              resetModal();
+              setIsUploading(true);
+            }}
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 bg-linear-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
+          >
+            <Plus className="w-5 h-5" />
+            Upload Report
+          </button>
+          <button
+            onClick={() => setShowArchivedModal(true)}
+            className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-50 transition-all shadow-sm"
+          >
+            <ArchiveIcon />
+            Archived Reports
+          </button>
+        </div>
       </div>
+
+      {visibleError && (
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
+          {visibleError}
+        </div>
+      )}
 
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -299,7 +309,7 @@ export default function ReportsPage() {
               <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
                 {archivedReports.length > 0 ? (
                   archivedReports.map((report) => (
-                    <div key={report.id} className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl flex items-start justify-between gap-4">
+                    <div key={report.id} className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                       <div className="space-y-1">
                         <h3 className="font-bold text-slate-800">{report.title}</h3>
                         <p className="text-sm text-neutral-500">{formatDate(report.date)} • {report.type}</p>
@@ -310,7 +320,7 @@ export default function ReportsPage() {
                           <p className="text-xs text-neutral-500">File: {report.fileName}</p>
                         )}
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex w-full sm:w-auto gap-2 shrink-0">
                         {getReportFileUrl(report) && (
                           <a
                             href={getReportFileUrl(report)}
@@ -323,7 +333,7 @@ export default function ReportsPage() {
                         )}
                         <button
                           onClick={() => handleArchive(report)}
-                          className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all"
+                          className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all w-full sm:w-auto"
                         >
                           Unarchive
                         </button>
@@ -349,7 +359,7 @@ export default function ReportsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsUploading(false)}
+              onClick={resetModal}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             />
             <motion.div 
@@ -358,21 +368,21 @@ export default function ReportsPage() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
-              <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-800">{editingId ? "Edit Test Report" : "Upload Test Report"}</h2>
+              <div className="p-4 sm:p-6 border-b border-neutral-100 flex items-center justify-between gap-3">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-800">{editingId ? "Edit Test Report" : "Upload Test Report"}</h2>
                 <button onClick={resetModal} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
                   <XCircle className="w-6 h-6 text-neutral-400" />
                 </button>
               </div>
               
-              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div className="p-4 sm:p-6 space-y-6 max-h-[70vh] overflow-y-auto">
                 {error && (
                   <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
                     {error}
                   </div>
                 )}
 
-                <label className="border-2 border-dashed border-neutral-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center gap-4 hover:border-indigo-400 transition-colors cursor-pointer group">
+                <label className="border-2 border-dashed border-neutral-200 rounded-2xl p-6 sm:p-12 flex flex-col items-center justify-center text-center gap-4 hover:border-indigo-400 transition-colors cursor-pointer group">
                   <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all">
                     <Plus className="w-8 h-8" />
                   </div>
@@ -400,7 +410,7 @@ export default function ReportsPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Test Date</label>
                     <input 
@@ -451,7 +461,7 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex gap-3">
+              <div className="p-4 sm:p-6 bg-neutral-50 border-t border-neutral-100 flex flex-col-reverse sm:flex-row gap-3">
                 <button 
                   onClick={resetModal}
                   className="flex-1 py-3 text-neutral-600 font-bold hover:bg-neutral-100 rounded-xl transition-all"

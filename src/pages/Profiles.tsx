@@ -200,7 +200,7 @@ export default function ProfilesPage() {
                     <h2 className="text-3xl font-bold text-slate-800">{activeProfile.name}</h2>
                     <p className="text-neutral-500 font-medium">{activeProfile.relationship} • {activeProfile.age} Years Old</p>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => handleEdit(activeProfile)}
                       className="px-6 py-2.5 border border-neutral-200 rounded-xl font-bold text-sm hover:bg-neutral-50 transition-all"
@@ -306,7 +306,7 @@ export default function ProfilesPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Relationship</label>
                     <select 
@@ -329,7 +329,7 @@ export default function ProfilesPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Blood Group</label>
                     <select 
@@ -389,7 +389,7 @@ export default function ProfilesPage() {
                 </div>
               </div>
 
-              <div className="p-8 bg-neutral-50 border-t border-neutral-100 flex gap-4">
+              <div className="p-8 bg-neutral-50 border-t border-neutral-100 flex flex-col-reverse sm:flex-row gap-4">
                 <button 
                   onClick={resetModal}
                   className="flex-1 py-4 text-neutral-600 font-black text-sm rounded-2xl hover:bg-neutral-100 transition-all uppercase tracking-widest"

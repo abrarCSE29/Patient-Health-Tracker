@@ -8,10 +8,11 @@ import { authenticatedFetch } from "@/lib/apiClient";
 
 export default function DoctorsPage() {
   const { activeProfileId, activeProfile } = usePatient();
-  const { data: doctors, refresh } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
+  const { data: doctors, refresh, error: doctorsLoadError } = useData<any[]>(activeProfileId ? `/api/doctors?profileId=${activeProfileId}` : null);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const visibleError = error || doctorsLoadError?.message || "";
   
   const [formData, setFormData] = useState({
     name: "",
@@ -108,16 +109,16 @@ export default function DoctorsPage() {
             setError("");
             setIsAdding(true);
           }}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
+          className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold hover:from-indigo-600 hover:to-violet-600 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus className="w-5 h-5" />
           Add Doctor
         </button>
       </div>
 
-      {error && (
+      {visibleError && (
         <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-bold">
-          {error}
+          {visibleError}
         </div>
       )}
 
@@ -164,7 +165,7 @@ export default function DoctorsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 w-full pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full pt-2">
                 <button className="flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-xs hover:bg-indigo-100 transition-all">
                   <MessageSquare className="w-3.5 h-3.5" />
                   Message
@@ -220,7 +221,7 @@ export default function DoctorsPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Specialty</label>
                     <input 
@@ -243,7 +244,7 @@ export default function DoctorsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Phone Number</label>
                     <input 
@@ -267,7 +268,7 @@ export default function DoctorsPage() {
                 </div>
               </div>
 
-              <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex gap-3">
+              <div className="p-6 bg-neutral-50 border-t border-neutral-100 flex flex-col-reverse sm:flex-row gap-3">
                 <button 
                   onClick={resetModal}
                   className="flex-1 py-3 text-neutral-600 font-bold hover:bg-neutral-100 rounded-xl transition-all"

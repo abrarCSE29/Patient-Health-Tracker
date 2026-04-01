@@ -13,6 +13,27 @@ export function setRefreshHandler(handler: (() => Promise<string | null>) | null
   refreshHandler = handler;
 }
 
+export async function getResponseErrorMessage(response: Response, fallbackMessage: string): Promise<string> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const payload = await response.json().catch(() => null);
+    if (typeof payload?.error === "string" && payload.error.trim().length > 0) {
+      return payload.error;
+    }
+    if (typeof payload?.message === "string" && payload.message.trim().length > 0) {
+      return payload.message;
+    }
+  } else {
+    const text = await response.text().catch(() => "");
+    if (text.trim().length > 0) {
+      return text;
+    }
+  }
+
+  return `${fallbackMessage} (${response.status} ${response.statusText})`;
+}
+
 function withAuthHeaders(init: RequestInit = {}): RequestInit {
   const headers = new Headers(init.headers || {});
   if (accessToken && !headers.has("Authorization")) {

@@ -9,6 +9,7 @@ import {
   Bell, 
   LogOut,
   ChevronRight,
+  ChevronDown,
   Menu,
   X,
   Users
@@ -16,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
+import { usePatient } from "@/context/PatientContext";
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -31,16 +33,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { profiles, activeProfileId, setActiveProfileId } = usePatient();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    try {
+      await logout();
+    } finally {
+      setIsMobileMenuOpen(false);
+      setIsUserMenuOpen(false);
+      navigate("/login");
+    }
   };
 
   const userInitials = user?.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase() || "U";
+
+  React.useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsUserMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/30 to-indigo-50/40 text-slate-800 flex">
@@ -195,11 +208,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+
+        <div className="p-4 border-t border-slate-200/80 bg-white/70">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/80 border border-slate-200/60">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm shadow-indigo-200">
+              {userInitials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-slate-800 truncate">{user?.name || "User"}</p>
+              <p className="text-[10px] font-medium text-slate-500 truncate">{user?.email || "user@example.com"}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="mt-3 flex items-center justify-center gap-2 px-4 py-2.5 w-full rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all text-sm font-bold"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
       </motion.aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 bg-white/70 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between px-6 md:px-8 shrink-0">
+        <header className="h-16 bg-white/70 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-6 md:px-8 shrink-0">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -209,14 +241,34 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <div className="flex items-center gap-4 md:hidden">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-indigo-200">
-              {userInitials}
+          <div className="flex items-center">
+            <div className="relative">
+              <label htmlFor="active-profile" className="sr-only">
+                Active profile
+              </label>
+              <select
+                id="active-profile"
+                value={activeProfileId ?? ""}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setActiveProfileId(e.target.value);
+                  }
+                }}
+                className="appearance-none pl-3 pr-9 py-2 rounded-xl border border-slate-200 bg-white/90 text-slate-700 text-xs sm:text-sm font-semibold shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 max-w-[12.5rem] sm:max-w-[16rem] truncate"
+              >
+                {profiles.length === 0 && <option value="">No profiles</option>}
+                {profiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.name} ({profile.relationship})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
