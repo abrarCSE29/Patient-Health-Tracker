@@ -199,14 +199,14 @@ export default function ReportsPage() {
           >
             <div className="aspect-video bg-neutral-100 flex items-center justify-center relative overflow-hidden">
               <FileText className="w-12 h-12 text-neutral-300 group-hover:scale-110 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="absolute inset-0 bg-black/10 md:bg-black/0 md:group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100">
                 <div className="flex gap-2">
                   {getReportFileUrl(report) && (
                     <a
                       href={getReportFileUrl(report)}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-2 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
+                      className="p-2.5 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
                     >
                       <Eye className="w-5 h-5" />
                     </a>
@@ -216,14 +216,14 @@ export default function ReportsPage() {
                       href={getReportFileUrl(report)}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-2 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
+                      className="p-2.5 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
                     >
                       <Download className="w-5 h-5" />
                     </a>
                   )}
                   <button
                     onClick={() => handleEdit(report)}
-                    className="p-2 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
+                    className="p-2.5 bg-white rounded-full text-indigo-600 shadow-lg hover:scale-110 transition-transform"
                     type="button"
                   >
                     <MoreVertical className="w-5 h-5" />
